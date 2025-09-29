@@ -1,0 +1,76 @@
+<?php
+
+declare(strict_types=1);
+
+namespace QuizScoringForms\UI\Dashboard;
+
+use QuizScoringForms\Config;
+
+/** Prevent direct access */
+if (!defined('ABSPATH')) exit;
+
+/**
+ * Class DashboardUI
+ *
+ * Handles all HTML rendering for the plugin dashboard.
+ */
+final class MainInterface
+{
+    /**
+     * Render dashboard home page
+     */
+    public static function renderHome(): void
+    {
+        ?>
+        <div class="wrap">
+            <h1><?= esc_html(Config::PLUGIN_NAME) ?></h1>
+            <p>Welcome to the plugin dashboard! Use the menu to navigate.</p>
+        </div>
+        <?php
+    }
+
+    /**
+     * Render plugin settings page
+     */
+    public static function renderSettings(): void
+    {
+        ?>
+        <div class="wrap">
+            <h1><?= esc_html(Config::PLUGIN_NAME) ?> Settings</h1>
+            <form method="post" action="options.php" enctype="multipart/form-data">
+                <?php
+                settings_fields(Config::SLUG_UNDERSCORE);
+                do_settings_sections(Config::SLUG_UNDERSCORE);
+                submit_button();
+                ?>
+            </form>
+        </div>
+        <?php
+    }
+
+    // === Field renderers ===
+    public static function renderLogoField(): void
+    {
+        $logo = get_option(Config::PLUGIN_ABBREV . 'logo', '');
+        echo '<input type="text" name="qsf_logo" value="' . esc_attr($logo) . '" style="width:50%;"> ';
+        echo '<button class="button upload-logo">Upload</button>';
+    }
+
+    public static function renderEmailToField(): void
+    {
+        $value = get_option(Config::PLUGIN_ABBREV . 'email_to', '');
+        echo '<input type="email" name="qsf_email_to" value="' . esc_attr($value) . '" style="width:50%;">';
+    }
+
+    public static function renderEmailFromField(): void
+    {
+        $value = get_option(Config::PLUGIN_ABBREV . 'email_from', '');
+        echo '<input type="email" name="qsf_email_from" value="' . esc_attr($value) . '" style="width:50%;">';
+    }
+
+    public static function renderEmailSubjectField(): void
+    {
+        $value = get_option(Config::PLUGIN_ABBREV . 'email_subject', '');
+        echo '<input type="text" name="qsf_email_subject" value="' . esc_attr($value) . '" style="width:50%;">';
+    }
+}
