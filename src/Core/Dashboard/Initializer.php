@@ -7,6 +7,7 @@ namespace QuizScoringForms\Core\Dashboard;
 use QuizScoringForms\Config;
 use QuizScoringForms\Core\Post\RegisterHandler as PostRegisterHandler;
 use QuizScoringForms\UI\Dashboard\MainInterface as DashboardUI;
+use QuizScoringForms\UI\Dashboard\Settings as SettingsUI;
 
 /** Prevent direct access */
 if (!defined('ABSPATH')) exit;
@@ -88,9 +89,9 @@ final class Initializer
         );
 
         // Individual fields
-        add_settings_field(Config::PLUGIN_ABBREV . 'logo', 'Logo', [self::class, 'renderLogoField'], Config::SLUG_UNDERSCORE, Config::PLUGIN_ABBREV . 'main_settings');
-        add_settings_field(Config::PLUGIN_ABBREV . 'email_to', 'Email To', [self::class, 'renderEmailToField'], Config::SLUG_UNDERSCORE, Config::PLUGIN_ABBREV . 'main_settings');
-        add_settings_field(Config::PLUGIN_ABBREV . 'email_from', 'Email From', [self::class, 'renderEmailFromField'], Config::SLUG_UNDERSCORE, Config::PLUGIN_ABBREV . 'main_settings');
-        add_settings_field(Config::PLUGIN_ABBREV . 'email_subject', 'Email Subject', [self::class, 'renderEmailSubjectField'], Config::SLUG_UNDERSCORE, Config::PLUGIN_ABBREV . 'main_settings');
+        add_settings_field(Config::PLUGIN_ABBREV . 'logo', 'Logo', [SettingsUI::class, 'renderLogoField'], Config::SLUG_UNDERSCORE, Config::PLUGIN_ABBREV . 'main_settings');
+        add_settings_field(Config::PLUGIN_ABBREV . 'email_to', 'Email To', [SettingsUI::class, 'renderEmailToField'], Config::SLUG_UNDERSCORE, Config::PLUGIN_ABBREV . 'main_settings');
+        add_settings_field(Config::PLUGIN_ABBREV . 'email_from', 'Email From', [SettingsUI::class, 'renderEmailFromField'], Config::SLUG_UNDERSCORE, Config::PLUGIN_ABBREV . 'main_settings');
+        add_settings_field(Config::PLUGIN_ABBREV . 'email_subject', 'Email Subject', [SettingsUI::class, 'renderEmailSubjectField'], Config::SLUG_UNDERSCORE, Config::PLUGIN_ABBREV . 'main_settings');
     }
 }

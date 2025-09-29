@@ -65,7 +65,15 @@ final class PostMetaBox
             echo '<input type="text" name="' . $this->postType . '_sections[' . $index . '][title]" value="' . $title . '" style="width:100%; margin-bottom:8px;">';
 
             echo '<label>Questions (one per line):</label><br>';
-            echo '<textarea name="' . $this->postType . '_sections[' . $index . '][questions]" rows="4" style="width:100%;">' . esc_textarea(implode("\n", $questions)) . '</textarea>';
+            
+            // If questions are objects/arrays, extract the "text"
+            if (!empty($questions) && is_array($questions) && isset($questions[0]['text'])) {
+                $questions = array_map(fn($q) => $q['text'] ?? '', $questions);
+            }
+
+            echo '<textarea name="' . $this->postType . '_sections[' . $index . '][questions]" rows="4" style="width:100%;">' 
+                . esc_textarea(implode("\n", $questions)) 
+                . '</textarea>';
 
             echo '<button type="button" class="button ' . $this->postType . '-remove-section-metabox" style="margin-top:8px;">Remove Section</button>';
 

@@ -77,7 +77,10 @@ final class ErrorGenerator
     
     public static function displayErrors(): void
     {
-
+        if (empty(self::$errors_list)) {
+            return;
+        }
+        
         // Style error notices
 
             echo '

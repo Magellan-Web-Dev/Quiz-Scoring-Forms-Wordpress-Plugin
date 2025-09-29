@@ -79,14 +79,13 @@ final class RegisterHandler
         $this->metaKey     = '_' . $this->postType . '_sections';
         $this->nonceAction = $this->postType . '_meta_box';
         $this->nonceName   = $this->postType . '_meta_box_nonce';
-        $this->apiRouter   = new APIRouter(Config::SLUG, strtolower(Config::POST_NAME));
+        $this->apiRouter   = new APIRouter(Config::SLUG, strtolower(Config::POST_NAME)); // Register API routes
 
         // Hook into WordPress
         add_action('init', [$this, 'registerPostType']); // Register CPT
         add_action('add_meta_boxes', [$this, 'registerMetaBoxes']); // Register UI meta box
         add_action('init', [$this, 'registerMetaFields']); // Register meta fields
         add_action("save_post_{$this->postType}", [$this, 'saveMetaBoxData'], 10, 2); // Save handler
-        add_action('rest_api_init', $this->apiRouter); // Register REST routes
     }
 
     /**
@@ -161,9 +160,34 @@ final class RegisterHandler
     public function registerMetaFields(): void
     {
         register_post_meta($this->postType, $this->metaKey, [
-            'type'              => 'array', // stored as array of sections/questions
-            'single'            => true,    // only one value per post
-            'show_in_rest'      => true,    // expose in REST API
+            'type'              => 'array',
+            'single'            => true,
+            'show_in_rest' => [
+                'schema' => [
+                    'type'  => 'array',
+                    'items' => [
+                        'type'       => 'object',
+                        'properties' => [
+                            'id' => [
+                                'type' => 'string',
+                            ],
+                            'title' => [
+                                'type' => 'string',
+                            ],
+                            'questions' => [
+                                'type'  => 'array',
+                                'items' => [
+                                    'type'       => 'object',
+                                    'properties' => [
+                                        'id'   => ['type' => 'string'],
+                                        'text' => ['type' => 'string'],
+                                    ],
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+            ],
             'description'       => 'Quiz sections with nested questions',
             'sanitize_callback' => fn($value) => $this->sanitizeSections((array) $value),
             'auth_callback'     => fn() => current_user_can('edit_posts'),
@@ -217,6 +241,15 @@ final class RegisterHandler
     }
 
     /**
+     * Generate a unique ID for sections/questions.
+     * Using uniqid is fine, or you could use wp_generate_uuid4().
+     */
+    private function generateId(): string
+    {
+        return wp_generate_uuid4(); // WordPress native UUID v4
+    }
+
+    /**
      * Centralized sanitizer for quiz sections/questions.
      *
      * Ensures both REST API input and meta box input
@@ -229,7 +262,9 @@ final class RegisterHandler
     {
         $sanitized = [];
 
-        foreach ($sections as $section) {
+        foreach ($sections as $sectionIndex => $section) {
+            $sectionId = 's' . $sectionIndex + 1;
+            $id    = sanitize_text_field($section['id'] ?? $sectionId);
             $title = sanitize_text_field($section['title'] ?? '');
 
             // Normalize questions: could come as string (from textarea) or array (from API)
@@ -238,10 +273,17 @@ final class RegisterHandler
                 $questionsRaw = explode("\n", $questionsRaw);
             }
 
-            // Sanitize each question and remove empty values
-            $questions = array_filter(array_map('sanitize_text_field', (array) $questionsRaw));
+            $questions = [];
+            foreach ((array) $questionsRaw as $questionIndex => $q) {
+                $questionId = $sectionId . '-q' . $questionIndex + 1;
+                $questions[] = [
+                    'id'   => sanitize_text_field(is_array($q) && isset($q['id']) ? $q['id'] : $questionId),
+                    'text' => sanitize_text_field(is_array($q) ? ($q['text'] ?? '') : $q),
+                ];
+            }
 
             $sanitized[] = [
+                'id'        => $id,
                 'title'     => $title,
                 'questions' => $questions,
             ];

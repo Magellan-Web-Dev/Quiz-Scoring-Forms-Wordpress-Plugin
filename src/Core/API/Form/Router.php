@@ -59,9 +59,7 @@ final class Router
         $this->namespace  = $namespace . '/v1'; 
         $this->restBase   = strtolower($restBase);
 
-        add_action('rest_api_init', function() {
-            $this->formSubmission();
-        });
+        $this->formSubmission();
     }
 
     /**
