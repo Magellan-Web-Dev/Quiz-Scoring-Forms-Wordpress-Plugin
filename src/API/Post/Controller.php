@@ -106,6 +106,7 @@ final class Controller
 
         $sections = $meta['sections'] ?? [];
         $answers  = $meta['answers'] ?? [];
+        $results  = $meta['results']  ?? [];
 
         return [
             'id'       => $post->ID,
@@ -115,6 +116,7 @@ final class Controller
             'modified' => get_the_modified_date('', $post),
             'sections' => $sections,
             'answers'  => $answers,
+            'results'  => $results
         ];
     }
 

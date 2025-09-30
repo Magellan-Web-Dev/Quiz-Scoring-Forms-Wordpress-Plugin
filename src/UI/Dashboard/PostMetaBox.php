@@ -15,11 +15,10 @@ if (!defined('ABSPATH')) exit;
  * Handles rendering of the custom meta box UI for the quiz post type.
  *
  * Features:
- * - Renders inputs for sections, questions, and global answers
+ * - Renders inputs for description, instructions, sections, questions, answers, and results
  * - Provides JS interactivity:
- *   - Add/remove sections
- *   - Add/remove answers
- *   - Drag-and-drop reordering for sections
+ *   - Add/remove sections, answers, results
+ *   - Drag-and-drop reordering for sections, answers, and results
  * - Provides scoped CSS so styles only affect this metabox
  */
 final class PostMetaBox
@@ -41,100 +40,142 @@ final class PostMetaBox
     {
         wp_nonce_field($this->nonceAction, $this->nonceName);
 
-        // Load saved data or default
+        // Load saved data or default structure
         $data = get_post_meta($post->ID, $this->metaKey, true);
         if (!is_array($data)) {
-            $data = ['sections' => [], 'answers' => []];
+            $data = [
+                'description'  => '',
+                'instructions' => '',
+                'sections'     => [],
+                'answers'      => [],
+                'results'      => [],
+            ];
         }
 
-        $sections = $data['sections'] ?? [];
-        $answers  = $data['answers'] ?? [];
+        $description  = $data['description'] ?? '';
+        $instructions = $data['instructions'] ?? '';
+        $sections     = $data['sections'] ?? [];
+        $answers      = $data['answers'] ?? [];
+        $results      = $data['results'] ?? [];
 
-        // --- Sections UI ---
-        echo '<div id="' . $this->postType . '-sections-metabox" class="' . $this->postType . '-sections-metabox">';
+        echo '<div class="' . $this->postType . '-metabox">';
 
+        // --- Description ---
+        echo '<h4>Description</h4>';
+        echo '<textarea name="' . $this->postType . '_data[description]" rows="3" style="width:100%;">' . esc_textarea($description) . '</textarea>';
+
+        // --- Instructions ---
+        echo '<h4 style="margin-top:16px;">Instructions</h4>';
+        echo '<textarea name="' . $this->postType . '_data[instructions]" rows="3" style="width:100%;">' . esc_textarea($instructions) . '</textarea>';
+
+        // --- Sections ---
+        echo '<h4 style="margin-top:16px;">Sections</h4>';
+        echo '<div id="' . $this->postType . '-sections-metabox">';
         foreach ($sections as $index => $section) {
             $title     = esc_attr($section['title'] ?? '');
             $questions = $section['questions'] ?? [];
-
-            // Ensure questions render as text lines
             if (!empty($questions) && is_array($questions)) {
                 $questions = array_map(fn($q) => is_array($q) ? ($q['text'] ?? '') : $q, $questions);
             }
 
-            echo '<div class="' . $this->postType . '-section-metabox ' . $this->postType . '-draggable-metabox">';
-            
+            echo '<div class="' . $this->postType . '-section-metabox">';
             echo '<label>Section Title:</label><br>';
             echo '<input type="text" name="' . $this->postType . '_data[sections][' . $index . '][title]" value="' . $title . '" style="width:100%; margin-bottom:8px;">';
-
             echo '<label>Questions (one per line):</label><br>';
-            echo '<textarea name="' . $this->postType . '_data[sections][' . $index . '][questions]" rows="4" style="width:100%;">' 
-                . esc_textarea(implode("\n", $questions)) 
-                . '</textarea>';
+            echo '<textarea name="' . $this->postType . '_data[sections][' . $index . '][questions]" rows="4" style="width:100%;">' . esc_textarea(implode("\n", $questions)) . '</textarea>';
 
-            // Remove + Drag handle container
-            echo '<div class="' . $this->postType . '-section-actions">';
-            echo '<button type="button" class="button ' . $this->postType . '-remove-section-metabox">Remove Section</button>';
-            echo '<span class="' . $this->postType . '-drag-handle" role="button" tabindex="0" title="Click and hold to drag">☰</span>';
+            // Actions row (remove + drag)
+            echo '<div class="' . $this->postType . '-item-actions">';
+            echo '<button type="button" class="button ' . $this->postType . '-remove-section-metabox" style="margin-top:12px;">Remove Section</button>';
+            echo '<span class="' . $this->postType . '-drag-handle" role="button" tabindex="0">☰</span>';
             echo '</div>';
 
-            echo '<hr>';
-            echo '</div>';
+            echo '<hr></div>';
         }
-
-        echo '</div>'; // end sections container
-
+        echo '</div>';
         echo '<button type="button" id="add-' . $this->postType . '-section-metabox" class="button" style="margin-top:8px;">Add Section</button>';
 
-        // --- Global Answer Options ---
-        echo '<h4 style="margin-top:16px;">Answer Options (applies to all questions)</h4>';
-        echo '<div id="' . $this->postType . '-answers-metabox" class="' . $this->postType . '-answers-metabox">';
+        // --- Answers ---
+        echo '<h4 style="margin-top:16px;">Answers (global)</h4>';
+        echo '<div id="' . $this->postType . '-answers-metabox">';
         foreach ($answers as $i => $answer) {
             $text  = esc_attr($answer['text'] ?? '');
             $value = esc_attr($answer['value'] ?? '');
             echo '<div class="' . $this->postType . '-answer-metabox">';
             echo '<input type="text" name="' . $this->postType . '_data[answers][' . $i . '][text]" value="' . $text . '" placeholder="Answer text" style="width:45%; margin-right:8px;">';
             echo '<input type="text" name="' . $this->postType . '_data[answers][' . $i . '][value]" value="' . $value . '" placeholder="Value" style="width:45%;">';
+
+            // Actions row (remove + drag)
+            echo '<div class="' . $this->postType . '-item-actions">';
             echo '<button type="button" class="button ' . $this->postType . '-remove-answer-metabox" style="margin-top:12px;">Remove Answer</button>';
+            echo '<span class="' . $this->postType . '-drag-handle" role="button" tabindex="0">☰</span>';
+            echo '</div>';
+
             echo '</div>';
         }
         echo '</div>';
         echo '<button type="button" id="add-' . $this->postType . '-answer-metabox" class="button" style="margin-top:8px;">Add Answer</button>';
 
+        // --- Results ---
+        echo '<h4 style="margin-top:16px;">Results</h4>';
+        echo '<div id="' . $this->postType . '-results-metabox">';
+        foreach ($results as $i => $result) {
+            $title = esc_attr($result['title'] ?? '');
+            $desc  = esc_textarea($result['description'] ?? '');
+            $min   = esc_attr($result['min_percentage'] ?? '');
+            $max   = esc_attr($result['max_percentage'] ?? '');
+
+            echo '<div class="' . $this->postType . '-result-metabox">';
+            echo '<input type="text" name="' . $this->postType . '_data[results][' . $i . '][title]" value="' . $title . '" placeholder="Result title" style="width:45%; margin-right:8px;">';
+            echo '<textarea name="' . $this->postType . '_data[results][' . $i . '][description]" rows="2" placeholder="Result description" style="width:100%; margin:8px 0;">' . $desc . '</textarea>';
+            echo '<input type="number" name="' . $this->postType . '_data[results][' . $i . '][min_percentage]" value="' . $min . '" placeholder="Min %" style="width:45%; margin-right:8px;">';
+            echo '<input type="number" name="' . $this->postType . '_data[results][' . $i . '][max_percentage]" value="' . $max . '" placeholder="Max %" style="width:45%;">';
+
+            // Actions row (remove + drag)
+            echo '<div class="' . $this->postType . '-item-actions">';
+            echo '<button type="button" class="button ' . $this->postType . '-remove-result-metabox" style="margin-top:12px;">Remove Result</button>';
+            echo '<span class="' . $this->postType . '-drag-handle" role="button" tabindex="0">☰</span>';
+            echo '</div>';
+
+            echo '</div>';
+        }
+        echo '</div>';
+        echo '<button type="button" id="add-' . $this->postType . '-result-metabox" class="button" style="margin-top:8px;">Add Result</button>';
+
+        echo '</div>';
+
         $this->renderStyles();
-        $this->renderScripts(count($sections), count($answers));
+        $this->renderScripts(count($sections), count($answers), count($results));
     }
 
     /**
-     * Render scoped styles for the metabox UI
+     * Render scoped styles
      */
     private function renderStyles(): void
     {
         ?>
         <style>
-            .<?php echo $this->postType; ?>-sections-metabox,
-            .<?php echo $this->postType; ?>-answers-metabox {
-                display: flex;
-                flex-direction: column;
-                gap: 12px;
-                margin-top: 12px;
-            }
-
+            /* Box styling for each item */
             .<?php echo $this->postType; ?>-section-metabox,
-            .<?php echo $this->postType; ?>-answer-metabox {
+            .<?php echo $this->postType; ?>-answer-metabox,
+            .<?php echo $this->postType; ?>-result-metabox {
                 background: #f9f9f9;
                 border: 1px solid #ddd;
                 padding: 12px;
                 border-radius: 4px;
+                margin-bottom: 8px;
             }
 
-            .<?php echo $this->postType; ?>-section-metabox.dragging {
+            /* Highlight when dragging */
+            .<?php echo $this->postType; ?>-section-metabox.dragging,
+            .<?php echo $this->postType; ?>-answer-metabox.dragging,
+            .<?php echo $this->postType; ?>-result-metabox.dragging {
                 opacity: 0.5;
                 border: 2px dashed #0073aa;
             }
 
-            /* Flex container for remove + drag */
-            .<?php echo $this->postType; ?>-section-actions {
+            /* Action bar for remove + drag handle */
+            .<?php echo $this->postType; ?>-item-actions {
                 display: flex;
                 justify-content: space-between;
                 align-items: center;
@@ -145,14 +186,16 @@ final class PostMetaBox
 
             /* Red remove buttons */
             .<?php echo $this->postType; ?>-remove-section-metabox,
-            .<?php echo $this->postType; ?>-remove-answer-metabox {
+            .<?php echo $this->postType; ?>-remove-answer-metabox,
+            .<?php echo $this->postType; ?>-remove-result-metabox {
                 background: #d63638 !important;
                 border-color: #d63638 !important;
                 color: #fff !important;
                 cursor: pointer;
             }
             .<?php echo $this->postType; ?>-remove-section-metabox:hover,
-            .<?php echo $this->postType; ?>-remove-answer-metabox:hover {
+            .<?php echo $this->postType; ?>-remove-answer-metabox:hover,
+            .<?php echo $this->postType; ?>-remove-result-metabox:hover {
                 background: #a4282a !important;
                 border-color: #a4282a !important;
             }
@@ -181,160 +224,168 @@ final class PostMetaBox
     }
 
     /**
-     * Render scoped scripts for add/remove/drag functionality
-     *
-     * @param int $sectionCount Number of existing sections
-     * @param int $answerCount Number of existing answers
+     * Render scoped scripts (handles add/remove and drag/drop)
      */
-    private function renderScripts(int $sectionCount, int $answerCount): void
+    private function renderScripts(int $sectionCount, int $answerCount, int $resultCount): void
     {
         ?>
         <script>
         (function(){
-            const container = document.getElementById('<?php echo $this->postType; ?>-sections-metabox');
-            const addBtn = document.getElementById('add-<?php echo $this->postType; ?>-section-metabox');
             let sectionIndex = <?php echo $sectionCount; ?>;
+            let answerIndex  = <?php echo $answerCount; ?>;
+            let resultIndex  = <?php echo $resultCount; ?>;
             let dragged = null;
 
-            // --- Section helpers ---
-            function attachRemoveSectionEvent(btn) {
+            /**
+             * Attach remove button logic
+             */
+            function attachRemove(btn, selector) {
                 if (!btn) return;
                 btn.addEventListener('click', () => {
-                    const parent = btn.closest('.<?php echo $this->postType; ?>-section-metabox');
+                    const parent = btn.closest(selector);
                     if (parent) parent.remove();
                 });
             }
 
-            // --- Drag helpers ---
-            function attachDragHandlers(section) {
-                section.draggable = false;
+            /**
+             * Attach drag-and-drop logic to a given element
+             */
+            function attachDragHandlers(item, container, selector) {
+                if (!item) return;
+                item.draggable = false;
 
-                section.addEventListener('dragstart', (e) => {
-                    dragged = section;
-                    section.classList.add('dragging');
+                item.addEventListener('dragstart', (e) => {
+                    dragged = item;
+                    item.classList.add('dragging');
                     try { e.dataTransfer.setData('text/plain', ''); } catch (err) {}
                 });
 
-                section.addEventListener('dragend', () => {
-                    section.classList.remove('dragging');
+                item.addEventListener('dragend', () => {
+                    item.classList.remove('dragging');
                     dragged = null;
-                    container.querySelectorAll('.<?php echo $this->postType; ?>-section-metabox').forEach(s => {
-                        s.style.borderTop = s.style.borderBottom = '';
+                    container.querySelectorAll(selector).forEach(el => {
+                        el.style.borderTop = el.style.borderBottom = '';
                     });
                 });
 
-                section.addEventListener('dragover', (e) => {
+                item.addEventListener('dragover', (e) => {
                     e.preventDefault();
-                    if (section === dragged) return;
-                    const bounding = section.getBoundingClientRect();
+                    if (item === dragged) return;
+                    const bounding = item.getBoundingClientRect();
                     const offset = bounding.y + bounding.height / 2;
                     if (e.clientY - offset > 0) {
-                        section.style.borderBottom = "2px solid #0073aa";
-                        section.style.borderTop = "";
+                        item.style.borderBottom = "2px solid #0073aa";
+                        item.style.borderTop = "";
                     } else {
-                        section.style.borderTop = "2px solid #0073aa";
-                        section.style.borderBottom = "";
+                        item.style.borderTop = "2px solid #0073aa";
+                        item.style.borderBottom = "";
                     }
                 });
 
-                section.addEventListener('dragleave', () => {
-                    section.style.borderTop = section.style.borderBottom = "";
+                item.addEventListener('dragleave', () => {
+                    item.style.borderTop = item.style.borderBottom = "";
                 });
 
-                section.addEventListener('drop', (e) => {
+                item.addEventListener('drop', (e) => {
                     e.preventDefault();
-                    section.style.borderTop = section.style.borderBottom = "";
+                    item.style.borderTop = item.style.borderBottom = "";
                     if (!dragged) return;
-                    if (e.clientY < section.getBoundingClientRect().y + section.offsetHeight / 2) {
-                        container.insertBefore(dragged, section);
+                    if (e.clientY < item.getBoundingClientRect().y + item.offsetHeight / 2) {
+                        container.insertBefore(dragged, item);
                     } else {
-                        container.insertBefore(dragged, section.nextSibling);
+                        container.insertBefore(dragged, item.nextSibling);
                     }
                 });
 
                 // Prevent drag activation on inputs/buttons
-                section.querySelectorAll('input, textarea, button').forEach(el => {
+                item.querySelectorAll('input, textarea, button').forEach(el => {
                     el.addEventListener('mousedown', ev => ev.stopPropagation());
                     el.addEventListener('dragstart', ev => ev.preventDefault());
                 });
+
+                // Drag handle activation
+                const handle = item.querySelector('.<?php echo $this->postType; ?>-drag-handle');
+                if (handle) {
+                    handle.addEventListener('mousedown', (e) => {
+                        if (e.button !== 0) return;
+                        item.draggable = true;
+                    });
+                    document.addEventListener('mouseup', () => {
+                        item.draggable = false;
+                    });
+                }
             }
 
-            // --- Handle helpers ---
-            function attachHandle(handle) {
-                if (!handle) return;
-                const section = handle.closest('.<?php echo $this->postType; ?>-section-metabox');
-                if (!section) return;
-
-                handle.addEventListener('mousedown', (e) => {
-                    if (e.button !== 0) return;
-                    section.draggable = true;
+            /**
+             * Initialize drag + remove on all existing items
+             */
+            function initItems(containerId, selector, removeClass) {
+                const container = document.getElementById(containerId);
+                container.querySelectorAll(selector).forEach(item => {
+                    attachRemove(item.querySelector(removeClass), selector);
+                    attachDragHandlers(item, container, selector);
                 });
-
-                document.addEventListener('mouseup', () => {
-                    container.querySelectorAll('.<?php echo $this->postType; ?>-section-metabox').forEach(s => s.draggable = false);
-                });
+                return container;
             }
 
-            // Init existing sections
-            container.querySelectorAll('.<?php echo $this->postType; ?>-section-metabox').forEach(section => {
-                attachDragHandlers(section);
-                attachHandle(section.querySelector('.<?php echo $this->postType; ?>-drag-handle'));
-                attachRemoveSectionEvent(section.querySelector('.<?php echo $this->postType; ?>-remove-section-metabox'));
-            });
+            const sectionContainer = initItems('<?php echo $this->postType; ?>-sections-metabox', '.<?php echo $this->postType; ?>-section-metabox', '.<?php echo $this->postType; ?>-remove-section-metabox');
+            const answerContainer  = initItems('<?php echo $this->postType; ?>-answers-metabox', '.<?php echo $this->postType; ?>-answer-metabox', '.<?php echo $this->postType; ?>-remove-answer-metabox');
+            const resultContainer  = initItems('<?php echo $this->postType; ?>-results-metabox', '.<?php echo $this->postType; ?>-result-metabox', '.<?php echo $this->postType; ?>-remove-result-metabox');
 
-            // Add new section
-            addBtn.addEventListener('click', () => {
+            // Add Section
+            document.getElementById('add-<?php echo $this->postType; ?>-section-metabox').addEventListener('click', () => {
                 const div = document.createElement('div');
-                div.className = '<?php echo $this->postType; ?>-section-metabox <?php echo $this->postType; ?>-draggable-metabox';
+                div.className = '<?php echo $this->postType; ?>-section-metabox';
                 div.innerHTML = `
                     <label>Section Title:</label><br>
                     <input type="text" name="<?php echo $this->postType; ?>_data[sections][${sectionIndex}][title]" style="width:100%; margin-bottom:8px;">
                     <label>Questions (one per line):</label><br>
                     <textarea name="<?php echo $this->postType; ?>_data[sections][${sectionIndex}][questions]" rows="4" style="width:100%;"></textarea>
-                    <div class="<?php echo $this->postType; ?>-section-actions">
-                        <button type="button" class="button <?php echo $this->postType; ?>-remove-section-metabox">Remove Section</button>
-                        <span class="<?php echo $this->postType; ?>-drag-handle" role="button" tabindex="0" title="Click and hold to drag">☰</span>
+                    <div class="<?php echo $this->postType; ?>-item-actions">
+                        <button type="button" class="button <?php echo $this->postType; ?>-remove-section-metabox" style="margin-top:12px;">Remove Section</button>
+                        <span class="<?php echo $this->postType; ?>-drag-handle">☰</span>
                     </div>
                     <hr>`;
-                container.appendChild(div);
-
-                attachDragHandlers(div);
-                attachHandle(div.querySelector('.<?php echo $this->postType; ?>-drag-handle'));
-                attachRemoveSectionEvent(div.querySelector('.<?php echo $this->postType; ?>-remove-section-metabox'));
-
+                sectionContainer.appendChild(div);
+                attachRemove(div.querySelector('.<?php echo $this->postType; ?>-remove-section-metabox'), '.<?php echo $this->postType; ?>-section-metabox');
+                attachDragHandlers(div, sectionContainer, '.<?php echo $this->postType; ?>-section-metabox');
                 sectionIndex++;
             });
 
-            // --- Answers ---
-            const answersContainer = document.getElementById('<?php echo $this->postType; ?>-answers-metabox');
-            const addAnswerBtn = document.getElementById('add-<?php echo $this->postType; ?>-answer-metabox');
-            let answerIndex = <?php echo $answerCount; ?>;
-
-            function attachRemoveAnswerEvent(btn) {
-                if (!btn) return;
-                btn.addEventListener('click', () => {
-                    const parent = btn.closest('.<?php echo $this->postType; ?>-answer-metabox');
-                    if (parent) parent.remove();
-                });
-            }
-
-            // Init existing answers
-            answersContainer.querySelectorAll('.<?php echo $this->postType; ?>-remove-answer-metabox').forEach(btn => {
-                attachRemoveAnswerEvent(btn);
-            });
-
-            // Add new answer
-            addAnswerBtn.addEventListener('click', () => {
+            // Add Answer
+            document.getElementById('add-<?php echo $this->postType; ?>-answer-metabox').addEventListener('click', () => {
                 const div = document.createElement('div');
                 div.className = '<?php echo $this->postType; ?>-answer-metabox';
                 div.innerHTML = `
                     <input type="text" name="<?php echo $this->postType; ?>_data[answers][${answerIndex}][text]" placeholder="Answer text" style="width:45%; margin-right:8px;">
                     <input type="text" name="<?php echo $this->postType; ?>_data[answers][${answerIndex}][value]" placeholder="Value" style="width:45%;">
-                    <button type="button" class="button <?php echo $this->postType; ?>-remove-answer-metabox" style="margin-top:12px;">Remove Answer</button>`;
-                answersContainer.appendChild(div);
-
-                attachRemoveAnswerEvent(div.querySelector('.<?php echo $this->postType; ?>-remove-answer-metabox'));
+                    <div class="<?php echo $this->postType; ?>-item-actions">
+                        <button type="button" class="button <?php echo $this->postType; ?>-remove-answer-metabox" style="margin-top:12px;">Remove Answer</button>
+                        <span class="<?php echo $this->postType; ?>-drag-handle">☰</span>
+                    </div>`;
+                answerContainer.appendChild(div);
+                attachRemove(div.querySelector('.<?php echo $this->postType; ?>-remove-answer-metabox'), '.<?php echo $this->postType; ?>-answer-metabox');
+                attachDragHandlers(div, answerContainer, '.<?php echo $this->postType; ?>-answer-metabox');
                 answerIndex++;
+            });
+
+            // Add Result
+            document.getElementById('add-<?php echo $this->postType; ?>-result-metabox').addEventListener('click', () => {
+                const div = document.createElement('div');
+                div.className = '<?php echo $this->postType; ?>-result-metabox';
+                div.innerHTML = `
+                    <input type="text" name="<?php echo $this->postType; ?>_data[results][${resultIndex}][title]" placeholder="Result title" style="width:45%; margin-right:8px;">
+                    <textarea name="<?php echo $this->postType; ?>_data[results][${resultIndex}][description]" rows="2" placeholder="Result description" style="width:100%; margin:8px 0;"></textarea>
+                    <input type="number" name="<?php echo $this->postType; ?>_data[results][${resultIndex}][min_percentage]" placeholder="Min %" style="width:45%; margin-right:8px;">
+                    <input type="number" name="<?php echo $this->postType; ?>_data[results][${resultIndex}][max_percentage]" placeholder="Max %" style="width:45%;">
+                    <div class="<?php echo $this->postType; ?>-item-actions">
+                        <button type="button" class="button <?php echo $this->postType; ?>-remove-result-metabox" style="margin-top:12px;">Remove Result</button>
+                        <span class="<?php echo $this->postType; ?>-drag-handle">☰</span>
+                    </div>`;
+                resultContainer.appendChild(div);
+                attachRemove(div.querySelector('.<?php echo $this->postType; ?>-remove-result-metabox'), '.<?php echo $this->postType; ?>-result-metabox');
+                attachDragHandlers(div, resultContainer, '.<?php echo $this->postType; ?>-result-metabox');
+                resultIndex++;
             });
 
         })();
