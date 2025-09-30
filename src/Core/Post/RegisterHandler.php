@@ -41,6 +41,8 @@ final class RegisterHandler
         add_action('add_meta_boxes', [$this, 'registerMetaBoxes']);
         add_action('init', [$this, 'registerMetaFields']);
         add_action('save_post_' . Config::POST_TYPE, [$this, 'saveMetaBoxData'], 10, 2);
+        add_action('admin_notices', [$this, 'displayValidationErrors']);
+        add_filter('wp_insert_post_data', [$this, 'validatePostBeforeSave'], 10, 2);
     }
 
     /**
@@ -183,18 +185,22 @@ final class RegisterHandler
 
     /**
      * Save quiz meta data on post save.
-     * 
-     * @see https://developer.wordpress.org/reference/hooks/save_post/
-     * @see https://developer.wordpress.org/reference/functions/wp_verify_nonce/
-     * @see https://developer.wordpress.org/reference/functions/current_user_can/
-     * @see https://developer.wordpress.org/reference/functions/sanitize_textarea_field/
-     * 
+     *
+     * Handles:
+     * - Security checks (nonce, autosave, permissions)
+     * - Sanitization and validation
+     * - Saving valid data to post meta
+     * - Storing invalid data + errors in transients for repopulation
+     *
+     * @param int      $postId The post ID.
+     * @param \WP_Post $post   The post object.
      */
     public function saveMetaBoxData(int $postId, \WP_Post $post): void
     {
+        // --- Security checks ---
         if (
             !isset($_POST[$this->nonceName]) ||
-            !wp_verify_nonce($_POST[$this->nonceName], $this->nonceAction)
+            !wp_verify_nonce(sanitize_text_field($_POST[$this->nonceName]), $this->nonceAction)
         ) {
             return;
         }
@@ -211,17 +217,176 @@ final class RegisterHandler
             return;
         }
 
-        $data = $_POST[Config::POST_TYPE . '_data'] ?? [];
+        // --- Collect raw submitted data ---
+        $rawData = $_POST[Config::POST_TYPE . '_data'] ?? [];
 
-        $sanitized = $this->sanitizeQuizData([
-            'description' => $data['description'] ?? '',
-            'instructions'=> $data['instructions'] ?? '',
-            'sections'    => $data['sections'] ?? [],
-            'answers'     => $data['answers'] ?? [],
-            'results'     => $data['results'] ?? [],
-        ]);
-        
+        // Normalize into expected structure
+        $structured = [
+            'description' => $rawData['description'] ?? '',
+            'instructions'=> $rawData['instructions'] ?? '',
+            'sections'    => $rawData['sections'] ?? [],
+            'answers'     => $rawData['answers'] ?? [],
+            'results'     => $rawData['results'] ?? [],
+        ];
+
+        // --- Sanitize data ---
+        $sanitized = $this->sanitizeQuizData($structured);
+
+        // --- Validate data ---
+        $errors = $this->validateQuizData($sanitized);
+
+        if (!empty($errors)) {
+            // Store validation errors for admin_notices
+            $this->setValidationErrors($postId, $errors);
+
+            // Store raw submitted data so the metabox can repopulate on reload
+            set_transient("quiz_validation_data_$postId", $structured, 30);
+
+            return; // stop here — don’t overwrite post meta with invalid data
+        }
+
+        // --- Save valid data ---
         update_post_meta($postId, $this->metaKey, $sanitized);
+
+        // Clear any old validation remnants
+        delete_transient("quiz_validation_data_$postId");
+        delete_transient("quiz_validation_errors_$postId");
+    }
+
+    /**
+     * Validate post data before WordPress saves it.
+     *
+     * Forces invalid Quiz posts to 'draft' status to prevent blank fields in the editor.
+     * Stores validation errors and raw data in transients for repopulation and admin notices.
+     *
+     * @param array $data    The post data being saved
+     * @param array $postarr The original post array
+     * @return array Modified post data
+     */
+    public function validatePostBeforeSave(array $data, array $postarr): array
+    {
+        // Only validate our custom post type
+        if (($postarr['post_type'] ?? '') !== Config::POST_TYPE) {
+            return $data;
+        }
+
+        // Skip autosaves
+        if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) {
+            return $data;
+        }
+
+        // Skip if nonce is missing
+        if (!isset($_POST[$this->nonceName]) || !wp_verify_nonce(sanitize_text_field($_POST[$this->nonceName]), $this->nonceAction)) {
+            return $data;
+        }
+
+        // Collect raw submitted data
+        $rawData = $_POST[Config::POST_TYPE . '_data'] ?? [];
+
+        $structured = [
+            'description' => $rawData['description'] ?? '',
+            'instructions'=> $rawData['instructions'] ?? '',
+            'sections'    => $rawData['sections'] ?? [],
+            'answers'     => $rawData['answers'] ?? [],
+            'results'     => $rawData['results'] ?? [],
+        ];
+
+        $sanitized = $this->sanitizeQuizData($structured);
+        $errors    = $this->validateQuizData($sanitized);
+
+        if (!empty($errors)) {
+            // Force the post to draft
+            $data['post_status'] = 'draft';
+
+            // Store validation errors for admin_notices
+            $this->setValidationErrors((int)$postarr['ID'], $errors);
+
+            // Store raw submitted data for repopulation
+            set_transient("quiz_validation_data_{$postarr['ID']}", $structured, 30);
+        }
+
+        return $data;
+    }
+
+    /**
+     * Validate quiz data against business rules.
+     *
+     * @param array $data Sanitized quiz data
+     * @return array Array of error messages (empty if valid)
+     */
+    private function validateQuizData(array $data): array
+    {
+        $errors = [];
+
+        // Description required
+        if ($data['description'] === '') {
+            $errors[] = 'Description is required.';
+        }
+
+        // Instructions required
+        if ($data['instructions'] === '') {
+            $errors[] = 'Instructions are required.';
+        }
+
+        // At least one section with one question
+        if (empty($data['sections'])) {
+            $errors[] = 'At least one section with a question is required.';
+        } else {
+            $hasQuestion = false;
+            foreach ($data['sections'] as $section) {
+                if (!empty($section['questions'])) {
+                    $hasQuestion = true;
+                    break;
+                }
+            }
+            if (!$hasQuestion) {
+                $errors[] = 'At least one question is required in a section.';
+            }
+        }
+
+        // At least one answer
+        if (empty($data['answers'])) {
+            $errors[] = 'At least one answer option is required.';
+        }
+
+        // At least one result
+        if (empty($data['results'])) {
+            $errors[] = 'At least one result is required.';
+        }
+
+        return $errors;
+    }
+
+    /**
+     * Display validation errors stored in transients as admin notices.
+     */
+    public function displayValidationErrors(): void
+    {
+        global $post;
+
+        if (!$post) {
+            return;
+        }
+
+        $errors = get_transient("quiz_validation_errors_{$post->ID}");
+        if ($errors) {
+            delete_transient("quiz_validation_errors_{$post->ID}");
+
+            foreach ($errors as $error) {
+                echo '<div class="notice notice-error is-dismissible"><p>' . esc_html($error) . '</p></div>';
+            }
+        }
+    }
+
+    /**
+     * Store validation errors temporarily so they can be displayed as admin notices.
+     *
+     * @param int   $postId The post ID.
+     * @param array $errors Array of error messages.
+     */
+    private function setValidationErrors(int $postId, array $errors): void
+    {
+        set_transient("quiz_validation_errors_$postId", $errors, 30);
     }
 
     /**

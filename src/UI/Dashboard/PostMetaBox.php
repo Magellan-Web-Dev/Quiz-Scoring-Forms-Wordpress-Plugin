@@ -40,8 +40,19 @@ final class PostMetaBox
     {
         wp_nonce_field($this->nonceAction, $this->nonceName);
 
-        // Load saved data or default structure
-        $data = get_post_meta($post->ID, $this->metaKey, true);
+        // First, check if we have validation data from the last save attempt
+        $validationData = get_transient("quiz_validation_data_{$post->ID}");
+
+        if ($validationData !== false) {
+            // Use the submitted data (invalid but user-entered)
+            $data = $validationData;
+            // Clear it so it only shows once
+            delete_transient("quiz_validation_data_{$post->ID}");
+        } else {
+            // Fallback to saved post meta
+            $data = get_post_meta($post->ID, $this->metaKey, true) ?: [];
+        }
+        
         if (!is_array($data)) {
             $data = [
                 'description'  => '',
@@ -235,6 +246,7 @@ final class PostMetaBox
             let answerIndex  = <?php echo $answerCount; ?>;
             let resultIndex  = <?php echo $resultCount; ?>;
             let dragged = null;
+            let draggedContainer = null;
 
             /**
              * Attach remove button logic
@@ -256,6 +268,7 @@ final class PostMetaBox
 
                 item.addEventListener('dragstart', (e) => {
                     dragged = item;
+                    draggedContainer = container; // 🔑 remember where this came from
                     item.classList.add('dragging');
                     try { e.dataTransfer.setData('text/plain', ''); } catch (err) {}
                 });
@@ -263,6 +276,7 @@ final class PostMetaBox
                 item.addEventListener('dragend', () => {
                     item.classList.remove('dragging');
                     dragged = null;
+                    draggedContainer = null;
                     container.querySelectorAll(selector).forEach(el => {
                         el.style.borderTop = el.style.borderBottom = '';
                     });
@@ -271,6 +285,7 @@ final class PostMetaBox
                 item.addEventListener('dragover', (e) => {
                     e.preventDefault();
                     if (item === dragged) return;
+                    if (draggedContainer !== container) return; // 🔑 block cross-container drops
                     const bounding = item.getBoundingClientRect();
                     const offset = bounding.y + bounding.height / 2;
                     if (e.clientY - offset > 0) {
@@ -288,8 +303,9 @@ final class PostMetaBox
 
                 item.addEventListener('drop', (e) => {
                     e.preventDefault();
-                    item.style.borderTop = item.style.borderBottom = "";
                     if (!dragged) return;
+                    if (draggedContainer !== container) return; // 🔑 only same container
+                    item.style.borderTop = item.style.borderBottom = "";
                     if (e.clientY < item.getBoundingClientRect().y + item.offsetHeight / 2) {
                         container.insertBefore(dragged, item);
                     } else {
