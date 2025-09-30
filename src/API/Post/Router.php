@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace QuizScoringForms\Core\Form\API;
+namespace QuizScoringForms\API\Post;
 
 use QuizScoringForms\Config;
-use QuizScoringForms\Core\Form\API\Controller;
+use QuizScoringForms\API\Post\Controller;
 
 /** 
  * Prevent direct access from sources other than the WordPress environment
@@ -15,7 +15,7 @@ if (!defined('ABSPATH')) exit;
 /**
  * Class Router
  * 
- * Handles all REST API routes related to form submission
+ * Handles all REST API routes related to quizzes
  * 
  * Responsibilities:
  * - Register custom REST API routes for quizzes
@@ -59,7 +59,10 @@ final class Router
         $this->namespace  = $namespace . '/v1'; 
         $this->restBase   = strtolower($restBase);
 
-        $this->formSubmission();
+        add_action('rest_api_init', function() {
+            $this->getAllPosts();
+            $this->getPostById();
+        });
     }
 
     /**
@@ -67,12 +70,25 @@ final class Router
      * 
      * @return void
      */
-    public function formSubmission() {
+    public function getAllPosts() {
         register_rest_route($this->namespace, '/' . $this->restBase, [
-            'methods'             => 'POST',
-            'callback'            => [$this->controller, 'handleFormSubmission'],
+            'methods'             => 'GET',
+            'callback'            => [$this->controller, 'getQuizzes'],
             'permission_callback' => '__return_true', // public read access
             'args'                => $this->controller->getCollectionParams(),
+        ]);
+    }
+
+    /**
+     * Register the GET /{$this->namespace}/v1/{$this->restBase}/id endpoint.
+     * 
+     * @return void
+     */
+    public function getPostById() {
+        register_rest_route($this->namespace, '/' . $this->restBase . '/(?P<id>\d+)', [
+            'methods'             => 'GET',
+            'callback'            => [$this->controller, 'getQuiz'],
+            'permission_callback' => '__return_true',
         ]);
     }
 }

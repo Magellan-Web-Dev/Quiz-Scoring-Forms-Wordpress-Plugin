@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace QuizScoringForms\Core\API\Post;
+namespace QuizScoringForms\API\Form;
 
 use QuizScoringForms\Config;
 
@@ -102,11 +102,15 @@ final class Controller
      */
     private function prepareQuizData(\WP_Post $post): array
     {
-        $meta = get_post_meta($post->ID, '_' . Config::POST_TYPE . '_sections', true);
+        // Retrieve sections meta from post (stored as serialized array)
+        $sections = get_post_meta($post->ID, '_' . Config::POST_TYPE . '_sections', true);
 
-        $sections = $meta['sections'] ?? [];
-        $answers  = $meta['answers'] ?? [];
+        // Guarantee sections is always an array
+        if (!is_array($sections)) {
+            $sections = [];
+        }
 
+        // Return structured quiz data
         return [
             'id'       => $post->ID,
             'title'    => get_the_title($post),
@@ -114,7 +118,6 @@ final class Controller
             'date'     => get_the_date('', $post),
             'modified' => get_the_modified_date('', $post),
             'sections' => $sections,
-            'answers'  => $answers,
         ];
     }
 

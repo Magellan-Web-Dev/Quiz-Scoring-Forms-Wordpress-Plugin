@@ -6,7 +6,7 @@ namespace QuizScoringForms\Core\Post;
 
 use QuizScoringForms\Config;
 use QuizScoringForms\UI\Dashboard\PostMetaBox as MetaBoxUI;
-use QuizScoringForms\Core\API\Post\Router as APIRouter;
+use QuizScoringForms\API\Post\Router as APIRouter;
 
 /** 
  * Prevent direct access from sources other than the WordPress environment
@@ -28,17 +28,10 @@ if (!defined('ABSPATH')) exit;
  *
  * This class acts as the "primary handler" for post type lifecycle
  * and delegates UI responsibilities to the {@see MetaBoxUI} class
- * and API request logic to the {@see APIController} class.
+ * and API request logic to the {@see APIRouter} class.
  */
 final class RegisterHandler
 {
-    /**
-     * The post type name (configured in Config).
-     *
-     * @var string
-     */
-    private string $postType;
-
     /**
      * The meta key used to store quiz sections.
      *
@@ -75,17 +68,19 @@ final class RegisterHandler
      */
     public function __construct()
     {
-        $this->postType    = Config::POST_TYPE;
-        $this->metaKey     = '_' . $this->postType . '_sections';
-        $this->nonceAction = $this->postType . '_meta_box';
-        $this->nonceName   = $this->postType . '_meta_box_nonce';
-        $this->apiRouter   = new APIRouter(Config::SLUG, strtolower(Config::POST_NAME)); // Register API routes
+        // Build consistent keys for storing data
+        $this->metaKey     = '_' . Config::POST_TYPE . '_sections';
+        $this->nonceAction = Config::POST_TYPE . '_meta_box';
+        $this->nonceName   = Config::POST_TYPE . '_meta_box_nonce';
 
-        // Hook into WordPress
+        // Initialize API router for custom REST routes
+        $this->apiRouter   = new APIRouter(Config::SLUG, strtolower(Config::POST_NAME));
+
+        // Hook into WordPress lifecycle
         add_action('init', [$this, 'registerPostType']); // Register CPT
-        add_action('add_meta_boxes', [$this, 'registerMetaBoxes']); // Register UI meta box
-        add_action('init', [$this, 'registerMetaFields']); // Register meta fields
-        add_action("save_post_{$this->postType}", [$this, 'saveMetaBoxData'], 10, 2); // Save handler
+        add_action('add_meta_boxes', [$this, 'registerMetaBoxes']); // Add custom meta box
+        add_action('init', [$this, 'registerMetaFields']); // Register post meta fields
+        add_action('save_post_' . Config::POST_TYPE, [$this, 'saveMetaBoxData'], 10, 2); // Save handler
     }
 
     /**
@@ -115,37 +110,37 @@ final class RegisterHandler
             'labels'      => $labels,
             'public'      => true,
             'menu_icon'   => 'dashicons-welcome-learn-more',
-            'supports'    => ['title'],   // Only the title is supported by default
-            'show_in_rest'=> false,       // We manage REST manually with custom routes
+            'supports'    => ['title'],   // We only need a title field in the editor
+            'show_in_rest'=> false,       // Disable default REST exposure (we handle it manually)
         ];
 
-        register_post_type($this->postType, $args);
+        register_post_type(Config::POST_TYPE, $args);
     }
 
     /**
      * Register the meta box for quiz sections in the admin editor screen.
      *
-     * Attaches the {@see MetaBoxUI} renderer class which outputs the HTML, CSS, and JS.
+     * Uses the {@see MetaBoxUI} renderer class to output the HTML, CSS, and JS.
      *
      * @return void
      */
     public function registerMetaBoxes(): void
     {
         add_meta_box(
-            $this->postType . '_sections', // ID of meta box
+            Config::POST_TYPE . '_sections', // Unique ID
             Config::POST_NAME . ' Sections', // Title shown in editor
             function(\WP_Post $post) {
-                // Delegate rendering to UI class
+                // Delegate rendering to UI layer
                 (new MetaBoxUI(
-                    $this->postType,
+                    Config::POST_TYPE,
                     $this->metaKey,
                     $this->nonceAction,
                     $this->nonceName
                 ))->render($post);
             },
-            $this->postType, // Post type where box appears
-            'normal',        // Context: main column
-            'high'           // Priority: show near top
+            Config::POST_TYPE,
+            'normal',
+            'high'
         );
     }
 
@@ -159,8 +154,8 @@ final class RegisterHandler
      */
     public function registerMetaFields(): void
     {
-        register_post_meta($this->postType, $this->metaKey, [
-            'type'          => 'object',   // still an object with 'sections' and 'answers'
+        register_post_meta(Config::POST_TYPE, $this->metaKey, [
+            'type'          => 'object',
             'single'        => true,
             'show_in_rest'  => [
                 'schema' => [
@@ -173,6 +168,7 @@ final class RegisterHandler
                                 'properties' => [
                                     'id'        => ['type' => 'string'],
                                     'title'     => ['type' => 'string'],
+                                    'slug'      => ['type' => 'string'], // <-- Slug field included
                                     'questions' => [
                                         'type'  => 'array',
                                         'items' => [
@@ -185,7 +181,7 @@ final class RegisterHandler
                                         ],
                                     ],
                                 ],
-                                'required' => ['id', 'title', 'questions'],
+                                'required' => ['id', 'title', 'slug', 'questions'],
                             ],
                         ],
                         'answers' => [
@@ -208,15 +204,8 @@ final class RegisterHandler
         ]);
     }
 
-
     /**
      * Save the structured sections/questions meta box data when the post is saved.
-     *
-     * Performs the following checks before saving:
-     * - Nonce verification
-     * - Autosave detection
-     * - Post type check
-     * - User capability check
      *
      * @param int $postId The ID of the post being saved.
      * @param \WP_Post $post The post object being saved.
@@ -232,25 +221,25 @@ final class RegisterHandler
             return;
         }
 
-        // Skip if autosave is running
+        // Skip autosave
         if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) {
             return;
         }
 
         // Only handle our custom post type
-        if ($post->post_type !== $this->postType) {
+        if ($post->post_type !== Config::POST_TYPE) {
             return;
         }
 
-        // Check user capability
+        // Verify permissions
         if (!current_user_can('edit_post', $postId)) {
             return;
         }
 
-        // Data
-        $data = $_POST[$this->postType . '_data'] ?? [];
+        // Collect submitted data
+        $data = $_POST[Config::POST_TYPE . '_data'] ?? [];
 
-        // Sanitize both
+        // Sanitize and save
         $sanitized = $this->sanitizeQuizData([
             'sections' => $data['sections'] ?? [],
             'answers'  => $data['answers'] ?? [],
@@ -262,10 +251,11 @@ final class RegisterHandler
     /**
      * Sanitize quiz data.
      * 
-     * Performs the following checks:
-     * - Sections
-     * - Answers
-     * 
+     * Performs strict cleaning and guarantees consistent structure:
+     * - Ensures section IDs and slugs exist
+     * - Cleans section/question text
+     * - Removes empty answers
+     *
      * @param array $data Raw data to sanitize
      * @return array Sanitized data
      */
@@ -280,9 +270,11 @@ final class RegisterHandler
         $sections = $data['sections'] ?? [];
         foreach ($sections as $sectionIndex => $section) {
             $sectionId = 's' . ($sectionIndex + 1);
+
             $id    = sanitize_text_field($section['id'] ?? $sectionId);
             $title = sanitize_text_field($section['title'] ?? '');
 
+            // Normalize questions into an array
             $questionsRaw = $section['questions'] ?? [];
             if (is_string($questionsRaw)) {
                 $questionsRaw = explode("\n", $questionsRaw);
@@ -297,9 +289,11 @@ final class RegisterHandler
                 ];
             }
 
+            // Add sanitized section
             $sanitized['sections'][] = [
                 'id'        => $id,
                 'title'     => $title,
+                'slug'      => $this->generateSlug($title), // <-- slug created from title
                 'questions' => $questions,
             ];
         }
@@ -309,6 +303,7 @@ final class RegisterHandler
         foreach ($answers as $answer) {
             $text  = sanitize_text_field($answer['text'] ?? '');
             $value = sanitize_text_field($answer['value'] ?? '');
+
             if ($text !== '' && $value !== '') {
                 $sanitized['answers'][] = [
                     'text'  => $text,
@@ -320,47 +315,23 @@ final class RegisterHandler
         return $sanitized;
     }
 
-
     /**
-     * Centralized sanitizer for quiz sections/questions.
+     * Generate a slug from a section title.
      *
-     * Ensures both REST API input and meta box input
-     * are treated consistently and safely.
+     * Mimics WordPress behavior:
+     * - Lowercase
+     * - Spaces -> dashes
+     * - Strip invalid characters
      *
-     * @param array $sections Raw input array of sections
-     * @return array Sanitized array of sections
+     * @param string $title
+     * @return string
      */
-    private function sanitizeSections(array $sections): array
+    private function generateSlug(string $title): string
     {
-        $sanitized = [];
-
-        foreach ($sections as $sectionIndex => $section) {
-            $sectionId = 's' . ($sectionIndex + 1);
-            $id    = sanitize_text_field($section['id'] ?? $sectionId);
-            $title = sanitize_text_field($section['title'] ?? '');
-
-            // Normalize questions: could come as string (from textarea) or array (from API)
-            $questionsRaw = $section['questions'] ?? [];
-            if (is_string($questionsRaw)) {
-                $questionsRaw = explode("\n", $questionsRaw);
-            }
-
-            $questions = [];
-            foreach ((array) $questionsRaw as $questionIndex => $q) {
-                $questionId = $sectionId . '-q' . ($questionIndex + 1);
-                $questions[] = [
-                    'id'   => sanitize_text_field(is_array($q) && isset($q['id']) ? $q['id'] : $questionId),
-                    'text' => sanitize_text_field(is_array($q) ? ($q['text'] ?? '') : $q),
-                ];
-            }
-
-            $sanitized[] = [
-                'id'        => $id,
-                'title'     => $title,
-                'questions' => $questions,
-            ];
-        }
-
-        return $sanitized;
+        $slug = strtolower($title);
+        $slug = preg_replace('/[^a-z0-9\s-]/', '', $slug); // Remove non-alphanumeric
+        $slug = preg_replace('/\s+/', '-', $slug);         // Replace spaces with dashes
+        $slug = preg_replace('/-+/', '-', $slug);          // Collapse multiple dashes
+        return trim($slug, '-');
     }
 }
