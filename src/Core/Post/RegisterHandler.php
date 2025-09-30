@@ -160,39 +160,54 @@ final class RegisterHandler
     public function registerMetaFields(): void
     {
         register_post_meta($this->postType, $this->metaKey, [
-            'type'              => 'array',
-            'single'            => true,
-            'show_in_rest' => [
+            'type'          => 'object',   // still an object with 'sections' and 'answers'
+            'single'        => true,
+            'show_in_rest'  => [
                 'schema' => [
-                    'type'  => 'array',
-                    'items' => [
-                        'type'       => 'object',
-                        'properties' => [
-                            'id' => [
-                                'type' => 'string',
-                            ],
-                            'title' => [
-                                'type' => 'string',
-                            ],
-                            'questions' => [
-                                'type'  => 'array',
-                                'items' => [
-                                    'type'       => 'object',
-                                    'properties' => [
-                                        'id'   => ['type' => 'string'],
-                                        'text' => ['type' => 'string'],
+                    'type' => 'object',
+                    'properties' => [
+                        'sections' => [
+                            'type'  => 'array',
+                            'items' => [
+                                'type'       => 'object',
+                                'properties' => [
+                                    'id'        => ['type' => 'string'],
+                                    'title'     => ['type' => 'string'],
+                                    'questions' => [
+                                        'type'  => 'array',
+                                        'items' => [
+                                            'type'       => 'object',
+                                            'properties' => [
+                                                'id'   => ['type' => 'string'],
+                                                'text' => ['type' => 'string'],
+                                            ],
+                                            'required' => ['id', 'text'],
+                                        ],
                                     ],
                                 ],
+                                'required' => ['id', 'title', 'questions'],
+                            ],
+                        ],
+                        'answers' => [
+                            'type'  => 'array',
+                            'items' => [
+                                'type'       => 'object',
+                                'properties' => [
+                                    'text'  => ['type' => 'string'],
+                                    'value' => ['type' => 'string'],
+                                ],
+                                'required' => ['text', 'value'],
                             ],
                         ],
                     ],
+                    'required' => ['sections', 'answers'],
                 ],
             ],
-            'description'       => 'Quiz sections with nested questions',
-            'sanitize_callback' => fn($value) => $this->sanitizeSections((array) $value),
+            'sanitize_callback' => fn($value) => $this->sanitizeQuizData((array)$value),
             'auth_callback'     => fn() => current_user_can('edit_posts'),
         ]);
     }
+
 
     /**
      * Save the structured sections/questions meta box data when the post is saved.
@@ -232,22 +247,79 @@ final class RegisterHandler
             return;
         }
 
-        // Grab and sanitize section data
-        $sections  = $_POST[$this->postType . '_sections'] ?? [];
-        $sanitized = $this->sanitizeSections((array) $sections);
+        // Data
+        $data = $_POST[$this->postType . '_data'] ?? [];
 
-        // Persist to post meta
+        // Sanitize both
+        $sanitized = $this->sanitizeQuizData([
+            'sections' => $data['sections'] ?? [],
+            'answers'  => $data['answers'] ?? [],
+        ]);
+        
         update_post_meta($postId, $this->metaKey, $sanitized);
     }
 
     /**
-     * Generate a unique ID for sections/questions.
-     * Using uniqid is fine, or you could use wp_generate_uuid4().
+     * Sanitize quiz data.
+     * 
+     * Performs the following checks:
+     * - Sections
+     * - Answers
+     * 
+     * @param array $data Raw data to sanitize
+     * @return array Sanitized data
      */
-    private function generateId(): string
+    private function sanitizeQuizData(array $data): array
     {
-        return wp_generate_uuid4(); // WordPress native UUID v4
+        $sanitized = [
+            'sections' => [],
+            'answers'  => [],
+        ];
+
+        // --- Sections ---
+        $sections = $data['sections'] ?? [];
+        foreach ($sections as $sectionIndex => $section) {
+            $sectionId = 's' . ($sectionIndex + 1);
+            $id    = sanitize_text_field($section['id'] ?? $sectionId);
+            $title = sanitize_text_field($section['title'] ?? '');
+
+            $questionsRaw = $section['questions'] ?? [];
+            if (is_string($questionsRaw)) {
+                $questionsRaw = explode("\n", $questionsRaw);
+            }
+
+            $questions = [];
+            foreach ((array) $questionsRaw as $questionIndex => $q) {
+                $questionId = $sectionId . '-q' . ($questionIndex + 1);
+                $questions[] = [
+                    'id'   => sanitize_text_field(is_array($q) && isset($q['id']) ? $q['id'] : $questionId),
+                    'text' => sanitize_text_field(is_array($q) ? ($q['text'] ?? '') : $q),
+                ];
+            }
+
+            $sanitized['sections'][] = [
+                'id'        => $id,
+                'title'     => $title,
+                'questions' => $questions,
+            ];
+        }
+
+        // --- Answers ---
+        $answers = $data['answers'] ?? [];
+        foreach ($answers as $answer) {
+            $text  = sanitize_text_field($answer['text'] ?? '');
+            $value = sanitize_text_field($answer['value'] ?? '');
+            if ($text !== '' && $value !== '') {
+                $sanitized['answers'][] = [
+                    'text'  => $text,
+                    'value' => $value,
+                ];
+            }
+        }
+
+        return $sanitized;
     }
+
 
     /**
      * Centralized sanitizer for quiz sections/questions.
@@ -263,7 +335,7 @@ final class RegisterHandler
         $sanitized = [];
 
         foreach ($sections as $sectionIndex => $section) {
-            $sectionId = 's' . $sectionIndex + 1;
+            $sectionId = 's' . ($sectionIndex + 1);
             $id    = sanitize_text_field($section['id'] ?? $sectionId);
             $title = sanitize_text_field($section['title'] ?? '');
 
@@ -275,7 +347,7 @@ final class RegisterHandler
 
             $questions = [];
             foreach ((array) $questionsRaw as $questionIndex => $q) {
-                $questionId = $sectionId . '-q' . $questionIndex + 1;
+                $questionId = $sectionId . '-q' . ($questionIndex + 1);
                 $questions[] = [
                     'id'   => sanitize_text_field(is_array($q) && isset($q['id']) ? $q['id'] : $questionId),
                     'text' => sanitize_text_field(is_array($q) ? ($q['text'] ?? '') : $q),

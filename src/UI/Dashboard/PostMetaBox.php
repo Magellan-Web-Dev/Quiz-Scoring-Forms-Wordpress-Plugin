@@ -42,19 +42,17 @@ final class PostMetaBox
      */
     public function render(\WP_Post $post): void
     {
-        // Generate a security nonce to protect form submissions.
         wp_nonce_field($this->nonceAction, $this->nonceName);
 
-        // Retrieve existing section data stored in post meta (if any).
-        $sections = get_post_meta($post->ID, $this->metaKey, true);
-        if (!is_array($sections)) {
-            $sections = [];
+        $data = get_post_meta($post->ID, $this->metaKey, true);
+        if (!is_array($data)) {
+            $data = ['sections' => [], 'answers' => []];
         }
 
-        // Container that will hold all sections.
-        echo '<div id="' . $this->postType . '-sections-metabox" class="' . $this->postType . '-sections-metabox">';
+        $sections = $data['sections'] ?? [];
+        $answers  = $data['answers'] ?? [];
 
-        // Loop through existing sections and output fields for each one.
+        echo '<div id="' . $this->postType . '-sections-metabox" class="' . $this->postType . '-sections-metabox">';
         foreach ($sections as $index => $section) {
             $title     = esc_attr($section['title'] ?? '');
             $questions = $section['questions'] ?? [];
@@ -62,33 +60,41 @@ final class PostMetaBox
             echo '<div class="' . $this->postType . '-section-metabox ' . $this->postType . '-draggable-metabox" draggable="true">';
             
             echo '<label>Section Title:</label><br>';
-            echo '<input type="text" name="' . $this->postType . '_sections[' . $index . '][title]" value="' . $title . '" style="width:100%; margin-bottom:8px;">';
+            echo '<input type="text" name="' . $this->postType . '_data[sections][' . $index . '][title]" value="' . $title . '" style="width:100%; margin-bottom:8px;">';
 
             echo '<label>Questions (one per line):</label><br>';
-            
-            // If questions are objects/arrays, extract the "text"
-            if (!empty($questions) && is_array($questions) && isset($questions[0]['text'])) {
-                $questions = array_map(fn($q) => $q['text'] ?? '', $questions);
+            if (!empty($questions) && is_array($questions)) {
+                $questions = array_map(fn($q) => is_array($q) ? ($q['text'] ?? '') : $q, $questions);
             }
-
-            echo '<textarea name="' . $this->postType . '_sections[' . $index . '][questions]" rows="4" style="width:100%;">' 
+            echo '<textarea name="' . $this->postType . '_data[sections][' . $index . '][questions]" rows="4" style="width:100%;">' 
                 . esc_textarea(implode("\n", $questions)) 
                 . '</textarea>';
 
             echo '<button type="button" class="button ' . $this->postType . '-remove-section-metabox" style="margin-top:8px;">Remove Section</button>';
-
             echo '<hr>';
             echo '</div>';
         }
+        echo '</div>'; // end sections container
 
-        echo '</div>'; // End sections container
+        echo '<button type="button" id="add-' . $this->postType . '-section-metabox" class="button" style="margin-top:8px;">Add Section</button>';
 
-        // Button to dynamically add new sections
-        echo '<button type="button" id="add-' . $this->postType . '-section-metabox" class="button">Add Section</button>';
+        // 🔹 Shared Answer Options
+        echo '<h4>Answer Options (applies to all questions)</h4>';
+        echo '<div id="' . $this->postType . '-answers-metabox" class="' . $this->postType . '-answers-metabox">';
+        foreach ($answers as $i => $answer) {
+            $text  = esc_attr($answer['text'] ?? '');
+            $value = esc_attr($answer['value'] ?? '');
+            echo '<div class="' . $this->postType . '-answer-metabox">';
+            echo '<input type="text" name="' . $this->postType . '_data[answers][' . $i . '][text]" value="' . $text . '" placeholder="Answer text" style="width:45%; margin-right:8px;">';
+            echo '<input type="text" name="' . $this->postType . '_data[answers][' . $i . '][value]" value="' . $value . '" placeholder="Value" style="width:45%;">';
+            echo '<button type="button" class="button ' . $this->postType . '-remove-answer-metabox">Remove</button>';
+            echo '</div>';
+        }
+        echo '</div>';
+        echo '<button type="button" id="add-' . $this->postType . '-answer-metabox" class="button" style="margin-top:8px;">Add Answer</button>';
 
-        // Render inline CSS and JS for the UI
         $this->renderStyles();
-        $this->renderScripts(count($sections));
+        $this->renderScripts(count($sections), count($answers));
     }
 
     /**
@@ -100,29 +106,30 @@ final class PostMetaBox
     {
         ?>
         <style>
-            .<?php echo $this->postType; ?>-sections-metabox {
+            .<?php echo $this->postType; ?>-sections-metabox,
+            .<?php echo $this->postType; ?>-answers-metabox {
                 display: flex;
                 flex-direction: column;
                 gap: 12px;
+                margin-top: 12px;
             }
-            .<?php echo $this->postType; ?>-section-metabox {
+            .<?php echo $this->postType; ?>-section-metabox,
+            .<?php echo $this->postType; ?>-answer-metabox {
                 background: #f9f9f9;
                 border: 1px solid #ddd;
                 padding: 12px;
                 border-radius: 4px;
-                cursor: grab;
             }
-            .<?php echo $this->postType; ?>-section-metabox.dragging {
-                opacity: 0.5;
-                border: 2px dashed #0073aa;
-            }
-            .<?php echo $this->postType; ?>-remove-section-metabox {
+            .<?php echo $this->postType; ?>-remove-section-metabox,
+            .<?php echo $this->postType; ?>-remove-answer-metabox {
+                margin-left: 8px;
                 background: #d63638 !important;
                 border-color: #d63638 !important;
                 color: #fff !important;
                 cursor: pointer;
             }
-            .<?php echo $this->postType; ?>-remove-section-metabox:hover {
+            .<?php echo $this->postType; ?>-remove-section-metabox:hover,
+            .<?php echo $this->postType; ?>-remove-answer-metabox:hover {
                 background: #a4282a !important;
                 border-color: #a4282a !important;
             }
@@ -136,88 +143,64 @@ final class PostMetaBox
      * @param int $sectionCount The number of pre-existing sections (used for indexing).
      * @return void
      */
-    private function renderScripts(int $sectionCount): void
+    private function renderScripts(int $sectionCount, int $answerCount): void
     {
         ?>
         <script>
-            (function(){
-                const container = document.getElementById('<?php echo $this->postType; ?>-sections-metabox');
-                const addBtn = document.getElementById('add-<?php echo $this->postType; ?>-section-metabox');
-                let sectionIndex = <?php echo $sectionCount; ?>;
+        (function(){
+            // --- Sections
+            const container = document.getElementById('<?php echo $this->postType; ?>-sections-metabox');
+            const addBtn = document.getElementById('add-<?php echo $this->postType; ?>-section-metabox');
+            let sectionIndex = <?php echo $sectionCount; ?>;
 
-                // Add new blank section dynamically
-                addBtn.addEventListener('click', () => {
-                    const div = document.createElement('div');
-                    div.className = '<?php echo $this->postType; ?>-section-metabox <?php echo $this->postType; ?>-draggable-metabox';
-                    div.setAttribute('draggable', 'true');
-                    div.innerHTML = `
-                        <label>Section Title:</label><br>
-                        <input type="text" name="<?php echo $this->postType; ?>_sections[${sectionIndex}][title]" style="width:100%; margin-bottom:8px;">
-                        <label>Questions (one per line):</label><br>
-                        <textarea name="<?php echo $this->postType; ?>_sections[${sectionIndex}][questions]" rows="4" style="width:100%;"></textarea>
-                        <button type="button" class="button <?php echo $this->postType; ?>-remove-section-metabox" style="margin-top:8px;">Remove Section</button>
-                        <hr>`;
-                    
-                    container.appendChild(div);
-                    sectionIndex++;
-                    attachDragEvents(div);
-                    attachRemoveEvent(div.querySelector('.<?php echo $this->postType; ?>-remove-section-metabox'));
+            addBtn.addEventListener('click', () => {
+                const div = document.createElement('div');
+                div.className = '<?php echo $this->postType; ?>-section-metabox <?php echo $this->postType; ?>-draggable-metabox';
+                div.setAttribute('draggable', 'true');
+                div.innerHTML = `
+                    <label>Section Title:</label><br>
+                    <input type="text" name="<?php echo $this->postType; ?>_data[sections][${sectionIndex}][title]" style="width:100%; margin-bottom:8px;">
+                    <label>Questions (one per line):</label><br>
+                    <textarea name="<?php echo $this->postType; ?>_data[sections][${sectionIndex}][questions]" rows="4" style="width:100%;"></textarea>
+                    <button type="button" class="button <?php echo $this->postType; ?>-remove-section-metabox" style="margin-top:8px;">Remove Section</button>
+                    <hr>`;
+                container.appendChild(div);
+                sectionIndex++;
+                attachRemoveEvent(div.querySelector('.<?php echo $this->postType; ?>-remove-section-metabox'));
+            });
+
+            function attachRemoveEvent(btn) {
+                btn.addEventListener('click', () => {
+                    const parent = btn.closest('div');
+                    if (parent) parent.remove();
                 });
+            }
 
-                // Drag-and-drop setup
-                let dragged;
-                function attachDragEvents(el) {
-                    el.addEventListener('dragstart', () => {
-                        dragged = el;
-                        el.classList.add('dragging');
-                    });
-                    el.addEventListener('dragend', () => {
-                        dragged = null;
-                        el.classList.remove('dragging');
-                    });
-                    el.addEventListener('dragover', (e) => {
-                        e.preventDefault();
-                        const bounding = el.getBoundingClientRect();
-                        const offset = bounding.y + bounding.height / 2;
+            container.querySelectorAll('.<?php echo $this->postType; ?>-remove-section-metabox').forEach(btn => {
+                attachRemoveEvent(btn);
+            });
 
-                        if (e.clientY - offset > 0) {
-                            el.style['border-bottom'] = "2px solid #0073aa";
-                            el.style['border-top'] = "";
-                        } else {
-                            el.style['border-top'] = "2px solid #0073aa";
-                            el.style['border-bottom'] = "";
-                        }
-                    });
-                    el.addEventListener('dragleave', () => {
-                        el.style['border-bottom'] = "";
-                        el.style['border-top'] = "";
-                    });
-                    el.addEventListener('drop', (e) => {
-                        e.preventDefault();
-                        el.style['border-bottom'] = "";
-                        el.style['border-top'] = "";
-                        if (e.clientY < el.getBoundingClientRect().y + el.offsetHeight / 2) {
-                            container.insertBefore(dragged, el);
-                        } else {
-                            container.insertBefore(dragged, el.nextSibling);
-                        }
-                    });
-                }
+            // --- Answers
+            const answersContainer = document.getElementById('<?php echo $this->postType; ?>-answers-metabox');
+            const addAnswerBtn = document.getElementById('add-<?php echo $this->postType; ?>-answer-metabox');
+            let answerIndex = <?php echo $answerCount; ?>;
 
-                // Remove button handler
-                function attachRemoveEvent(btn) {
-                    btn.addEventListener('click', () => {
-                        const section = btn.closest('.<?php echo $this->postType; ?>-section-metabox');
-                        if (section) section.remove();
-                    });
-                }
+            addAnswerBtn.addEventListener('click', () => {
+                const div = document.createElement('div');
+                div.className = '<?php echo $this->postType; ?>-answer-metabox';
+                div.innerHTML = `
+                    <input type="text" name="<?php echo $this->postType; ?>_data[answers][${answerIndex}][text]" placeholder="Answer text" style="width:45%; margin-right:8px;">
+                    <input type="text" name="<?php echo $this->postType; ?>_data[answers][${answerIndex}][value]" placeholder="Value" style="width:45%;">
+                    <button type="button" class="button <?php echo $this->postType; ?>-remove-answer-metabox">Remove</button>`;
+                answersContainer.appendChild(div);
+                answerIndex++;
+                attachRemoveEvent(div.querySelector('.<?php echo $this->postType; ?>-remove-answer-metabox'));
+            });
 
-                // Initialize events for existing sections
-                container.querySelectorAll('.<?php echo $this->postType; ?>-section-metabox').forEach(section => {
-                    attachDragEvents(section);
-                    attachRemoveEvent(section.querySelector('.<?php echo $this->postType; ?>-remove-section-metabox'));
-                });
-            })();
+            answersContainer.querySelectorAll('.<?php echo $this->postType; ?>-remove-answer-metabox').forEach(btn => {
+                attachRemoveEvent(btn);
+            });
+        })();
         </script>
         <?php
     }
