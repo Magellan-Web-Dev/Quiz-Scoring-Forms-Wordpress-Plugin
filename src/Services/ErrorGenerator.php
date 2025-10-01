@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace QuizScoringForms\Services;
 
+use QuizScoringForms\Config;
+
 /** 
  * Prevent direct access from sources other than the Wordpress environment
  */
@@ -64,7 +66,7 @@ final class ErrorGenerator
      */
 
     public static function errorHTMLMsg($msg): string {
-        return '<h2 class="quiz-scoring-form-err-msg">'. $msg.'<h2>';
+        return '<div class="'.Config::SLUG.'-err-msg notice-error notice is-dismissible"><p>'. esc_html($msg).'</p></div>';
     }
 
     /**

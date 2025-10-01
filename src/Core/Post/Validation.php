@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace QuizScoringForms\Core\Post;
 
 use QuizScoringForms\Config;
+use QuizScoringForms\Services;
+use QuizScoringForms\Services\ErrorGenerator as Errors;
+use QuizScoringForms\Services\TransientStorage as Storage;
 
 /**
  * Prevent direct access from outside WordPress
@@ -20,12 +23,18 @@ if (!defined('ABSPATH')) exit;
  */
 final class Validation
 {
-    private $nonceAction;
-    private $nonceName;
+    private string $nonceAction;
+    private string $nonceName;
+    private string $storageKey;
+    public Storage $storedData;
+    public Storage $storedErrors;
 
-    public function __construct($nonceAction, $nonceName) {
+    public function __construct($nonceAction, $nonceName, $storageKey) {
         $this->nonceAction = $nonceAction;
         $this->nonceName   = $nonceName;
+        $this->storageKey  = $storageKey;
+        $this->storedData  = new Storage($this->storageKey . '_validation_data', 30);
+        $this->storedErrors = new Storage($this->storageKey . '_validation_errors', 30);
     }
     /**
      * Validate post data before WordPress saves it.
@@ -73,10 +82,10 @@ final class Validation
             $data['post_status'] = 'draft';
 
             // Store validation errors for admin_notices
-            $this->setValidationErrors((int)$postarr['ID'], $errors);
+            $this->storedErrors->set($errors, $postarr['ID']);
 
             // Store raw submitted data for repopulation
-            set_transient("quiz_validation_data_{$postarr['ID']}", $structured, 30);
+            $this->storedData->set($structured, $postarr['ID']);
         }
 
         return $data;
@@ -142,25 +151,14 @@ final class Validation
             return;
         }
 
-        $errors = get_transient("quiz_validation_errors_{$post->ID}");
+        $errors = $this->storedErrors->get($post->ID);
         if ($errors) {
-            delete_transient("quiz_validation_errors_{$post->ID}");
+            $this->storedErrors->delete($post->ID);
 
             foreach ($errors as $error) {
-                echo '<div class="notice notice-error is-dismissible"><p>' . esc_html($error) . '</p></div>';
+                echo Errors::errorHTMLMsg($error);
             }
         }
-    }
-
-    /**
-     * Store validation errors temporarily so they can be displayed as admin notices.
-     *
-     * @param int   $postId The post ID.
-     * @param array $errors Array of error messages.
-     */
-    public function setValidationErrors(int $postId, array $errors): void
-    {
-        set_transient("quiz_validation_errors_$postId", $errors, 30);
     }
 
     /**

@@ -26,6 +26,12 @@ if (!defined('ABSPATH')) exit;
 final class RegisterHandler
 {
     /**
+     * The key for storing the quiz data in the transient storage.
+     * @var string
+     */
+    private const DATA_STORAGE_KEY = 'quiz_post';
+
+    /**
      * The meta key for storing the quiz data in the post meta table.
      * @var string
      */
@@ -64,7 +70,7 @@ final class RegisterHandler
         $this->nonceAction = Config::POST_TYPE . '_meta_box';
         $this->nonceName   = Config::POST_TYPE . '_meta_box_nonce';
         $this->apiRouter   = new APIRouter(Config::SLUG, strtolower(Config::POST_NAME));
-        $this->validation  = new Validation($this->nonceAction, $this->nonceName);
+        $this->validation  = new Validation($this->nonceAction, $this->nonceName, self::DATA_STORAGE_KEY);
 
         // Register hooks
         add_action('init', [$this, 'registerPostType']);
@@ -267,10 +273,10 @@ final class RegisterHandler
 
         if (!empty($errors)) {
             // Store validation errors for admin_notices
-            $this->validation->setValidationErrors($postId, $errors);
+            $this->validation->storedErrors->set($errors, $postId);
 
             // Store raw submitted data so the metabox can repopulate on reload
-            set_transient("quiz_validation_data_$postId", $structured, 30);
+            $this->validation->storedData->set($structured, $postId);
 
             return; // stop here — don’t overwrite post meta with invalid data
         }
@@ -279,7 +285,7 @@ final class RegisterHandler
         update_post_meta($postId, $this->metaKey, $sanitized);
 
         // Clear any old validation remnants
-        delete_transient("quiz_validation_data_$postId");
-        delete_transient("quiz_validation_errors_$postId");
+        $this->validation->storedData->delete($postId);
+        $this->validation->storedErrors->delete($postId);
     }
 }
