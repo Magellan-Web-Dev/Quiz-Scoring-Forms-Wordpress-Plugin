@@ -20,43 +20,58 @@ if (!defined('ABSPATH')) exit;
  * Handles the initialization of the plugin
  */
 
+/**
+ * Class Plugin
+ * 
+ * Handles the initialization of the plugin
+ * 
+ * @package QuizScoringForms
+ */
 final class Plugin {
 
     /**
-     * Initialized  
+     * @var Plugin|null $instance
      */
-    public static bool $initialized = false;
+    private static ?Plugin $instance = null;
 
     /**
-     * Dashboard Interface initializer instantiation
+     * @var Dashboard $dashboard
      */
-    private static Dashboard $dashboard;
+    private Dashboard $dashboard;
 
     /**
-     * Shortcode Interface initializer instantiation
+     * @var Shortcode $shortcode
      */
-    private static Shortcode $shortcode;
-
+    private Shortcode $shortcode;
 
     /**
-     * Initialize the plugin. Makes sure that the minimum PHP version is met.
-     * 
+     * Initialize the plugin
      */
-    public static function init() {
-        try {
-            if (self::$initialized) return;
-            if (!self::minPHPVersionVerify()) return;
-            self::loadPlugin();
-        } catch (\LogicException $e) {
-            error_log($e->getMessage());
-        } finally {
-            self::$initialized = true;
-            ErrorGenerator::displayErrors();
-        }
+    public static function init(): void {
+        if (self::$instance !== null) return;
+
+        if (!self::minPHPVersionVerify()) return;
+
+        self::$instance = new self();
+        self::$instance->loadPlugin();
+
+        ErrorGenerator::displayErrors();
     }
 
     /**
-     * Verify minimum PHP version.  
+     * Get the current instance of the plugin
+     * 
+     * @return static
+     */
+    public static function instance(): self {
+        if (self::$instance === null) {
+            throw new \LogicException("Plugin not initialized yet.");
+        }
+        return self::$instance;
+    }
+
+    /**
+     * Verify minimum PHP version
      * 
      * @return bool
      */
@@ -70,24 +85,28 @@ final class Plugin {
     }
 
     /**
-     * Load the plugin
-     * 
-     * @return void
+     * Load the plugin components
      */
-    private static function loadPlugin(): void {
-        self::$dashboard = new Dashboard();
-        self::$shortcode= new Shortcode();
+    private function loadPlugin(): void {
+        $this->dashboard = new Dashboard();
+        $this->shortcode = new Shortcode();
     }
 
     /**
-     * Get plugin initialization data
+     * Get the dashboard component
      * 
-     * @return array
+     * @return Dashboard
      */
-    public static function getData(): array {
-        return [
-            'dashboard' => self::$dashboard,
-            'shortcode' => self::$shortcode
-        ];
+    public function getDashboard(): Dashboard {
+        return $this->dashboard;
+    }
+
+    /**
+     * Get the shortcode component
+     * 
+     * @return Shortcode
+     */
+    public function getShortcode(): Shortcode {
+        return $this->shortcode;
     }
 }

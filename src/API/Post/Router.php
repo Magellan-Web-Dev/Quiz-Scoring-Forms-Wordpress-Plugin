@@ -29,21 +29,21 @@ final class Router
      * 
      * @var Controller
      */
-    private Controller $controller;
+    public readonly Controller $controller;
     
     /**
      * The namespace for the REST API routes.
      * 
      * @var string
      */
-    private string $namespace;
+    public readonly string $namespace;
     
     /**
      * The base route for the REST API routes.
      * 
      * @var string
      */
-    private string $restBase;
+    public readonly string $restBase;
 
     /**
      * Constructor
