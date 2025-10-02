@@ -40,11 +40,11 @@ final class DataHandler {
     public readonly string $instructions;
 
     /**
-     * Array of sections in the quiz.
+     * Array of questionsections in the quiz.
      *
      * @var array
      */
-    public readonly array $sections;
+    public readonly array $questionSections;
 
     /**
      * Array of answers in the quiz.
@@ -65,7 +65,7 @@ final class DataHandler {
      * 
      * @var Schema
      */
-    public Schema $fieldsSchema;
+    public Schema $schema;
 
     /**
      * Constructor.
@@ -77,29 +77,43 @@ final class DataHandler {
         $this->title = $postData['title'];
         $this->description = $postData['description'];
         $this->instructions = $postData['instructions'];
-        $this->sections = $postData['sections'];
+        $this->questionSections = $postData['sections'];
         $this->answers = $postData['answers'];
         $this->results = $postData['results'];
-        $this->fieldsSchema = new Schema();
+        $this->schema = new Schema();
 
-        $this->appendQuestions();
-        var_dump(json_encode($this->fieldsSchema->getFields()));
+        $this->setQuestionsData();
+        var_dump(json_encode($this->schema->getFields()));
     }
 
     /**
-     * Append questions from each section to the schema.
+     * Set the questions data. Sets the schema for all the question fields and the corresponding sections each question is in.
      * 
      * @return void
      */
-    private function appendQuestions():void {
-        $this->fieldsSchema = new Schema();
-        $questionOrderCounter = 1;
-        foreach($this->sections as $section) {
-            foreach($section['questions'] as $index => $question) {
-                $this->fieldsSchema->appendField($section, $question, $questionOrderCounter);
-                $questionOrderCounter++;
+
+    private function setQuestionsData():void {
+        $this->schema = new Schema();
+        foreach($this->questionSections as $sectionIndex => $questionSection) {
+            $this->schema->addSection($questionSection, ($sectionIndex + 1), $this->getSectionQuestionsIds($questionSection));
+            foreach($questionSection['questions'] as $questionIndex => $question) {
+                $this->schema->addQuestionField($questionSection, $question, ($questionIndex + 1));
             }
         }
+    }
+
+    /**
+     * Get the ids of the questions in a section.
+     * 
+     * @param array $section
+     * @return array
+     */
+    private function getSectionQuestionsIds(array $section): array {
+        $questions = [];
+        foreach($section['questions'] as $question) {
+            $questions[] = $question['id'];
+        }
+        return $questions;
     }
 
     /**
@@ -107,7 +121,7 @@ final class DataHandler {
      * @param array $schema
      * @return void
      */
-    public function appendSchema(array $schema):void {
+    public function addContactFields(array $schema):void {
 
         // Schema validation
         $revisedSchema = [];
@@ -122,7 +136,7 @@ final class DataHandler {
      * Get the schema used to validate form data.
      * @return array
      */
-    public function getSchema(): array {
+    public function getSchema(): Schema {
         return $this->schema;
     }
 
@@ -150,44 +164,5 @@ final class DataHandler {
         // Set the scoring schema and return it
         $this->scoringSchema = $this->getData()['scoring'];
         return $this->scoringSchema;
-    }
-
-    /**
-     * Get the schema used to validate results data.
-     * 
-     * @return array
-     */
-
-    public function getResultsSchema(): array
-    {
-        /**
-         * The schema used to validate results data.
-         * 
-         * @var array
-         */
-
-        if (!empty($this->resultsSchema)) {
-            return $this->resultsSchema;
-        }
-
-        // If the data is empty, fetch it
-        $this->resultsSchema = $this->getData()['results'];
-        
-        return $this->resultsSchema;
-    }
-
-    /**
-     * Get the name of the quiz.
-     * 
-     * @return string
-     */
-    public function getQuizName() {
-        if (empty($this->data['title'])) {
-            $$this->getData();
-        }
-        if (empty($this->data['title'])) {
-            throw new \Exception('Unable to fetch data to get name of quiz.');
-        }
-        return $this->data['title'];
     }
 }
