@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace QuizScoringForms\Core\Form;
 
-use QuizScoringForms\Core\Form\Field as FormField;
+use QuizScoringForms\Core\Form\Schema;
 
 /** 
  * Prevent direct access from sources other than the Wordpress environment
@@ -19,121 +19,87 @@ if (!defined('ABSPATH')) exit;
 final class DataHandler {
 
     /**
-     * The fetched data.
-     * @var array
+     * Title of the quiz.
+     *
+     * @var string
      */
-    private array $data = [];
+    public readonly string $title;
 
     /**
-     * The schema used to validate form data.
-     * @var array
+     * Description of the quiz.
+     *
+     * @var string
      */
-    private array $schema = [];
+    public readonly string $description;
 
     /**
-     * The schema used to validate results data.
-     * @var array
+     * Instructions for the quiz.
+     *
+     * @var string
      */
-    private array $resultsSchema = [];
+    public readonly string $instructions;
 
     /**
-     * The schema used to validate scoring data.
+     * Array of sections in the quiz.
+     *
      * @var array
      */
-    private array $scoringSchema = [];
+    public readonly array $sections;
+
+    /**
+     * Array of answers in the quiz.
+     *
+     * @var array
+     */
+    public readonly array $answers;
+
+    /**
+     * Array of results in the quiz.
+     *
+     * @var array
+     */
+    public readonly array $results;
+
+    /**
+     * Schema used to validate form fields data.
+     * 
+     * @var Schema
+     */
+    public Schema $fieldsSchema;
 
     /**
      * Constructor.
+     * 
+     * @param array $postData
+     * @return void
      */
-    public function __construct() {}
+    public function __construct(array $postData) {
+        $this->title = $postData['title'];
+        $this->description = $postData['description'];
+        $this->instructions = $postData['instructions'];
+        $this->sections = $postData['sections'];
+        $this->answers = $postData['answers'];
+        $this->results = $postData['results'];
+        $this->fieldsSchema = new Schema();
+
+        $this->appendQuestions();
+        var_dump(json_encode($this->fieldsSchema->getFields()));
+    }
 
     /**
-     * Get the fetched data.
-     * @return array
-     * @throws \Exception
+     * Append questions from each section to the schema.
+     * 
+     * @return void
      */
-    public function getData() {
-
-        // If the data is already available, return it
-        if (!empty($this->data)) {
-            return $this->data;
-        }
-
-        // If the data url query or data url is empty, throw an exception
-        if (!defined('QUIZ_QUERY') || QUIZ_QUERY === '') {
-            throw new \Exception('Invalid or empty data url query provided.');
-        }
-
-        // If the data url is empty, throw an exception
-        if (!defined('DATA_URL') || DATA_URL === '') {
-            throw new \Exception('Invalid or empty data url provided.');
-        }
-
-        // Fetch the data
-        $fetchData = @file_get_contents(DATA_URL);
-        
-        // If the data could not be fetched, throw an exception
-        if ($fetchData === false) {
-            throw new \Exception('Unable to fetch data from url: ' . DATA_URL);
-        }
-
-        // Parse the data
-        $fetchData = json_decode($fetchData, true);
-
-        // If the data could not be parsed, throw an exception
-        if ($fetchData === false) {
-            throw new \Exception('Unable to parse data from url: ' . DATA_URL);
-        }
-
-        // Find the data for the url query
-        $quizData = false;
-
-        // Loop through the data to find the data for the url query
-        foreach($fetchData as $quiz) {
-            if ($quiz['slug'] === QUIZ_QUERY) {
-                $quizData = $quiz;
-                break;
+    private function appendQuestions():void {
+        $this->fieldsSchema = new Schema();
+        $questionOrderCounter = 1;
+        foreach($this->sections as $section) {
+            foreach($section['questions'] as $index => $question) {
+                $this->fieldsSchema->appendField($section, $question, $questionOrderCounter);
+                $questionOrderCounter++;
             }
         }
-
-        // Get the answer values for validation
-        $answerValues = array_values($quizData['scoring']);
-        $answerValues = array_map('strval', $answerValues);
-
-        // Concatenate the section id to the question id to ensure every question has a unique id and set schema
-        foreach($quizData['sections'] as $sectionIndex => $sectionData) {
-            foreach($sectionData['questions'] as $questionIndex => $questionData) {
-                $questionData['id'] = $sectionData['id'] . '-' . $questionData['id'];
-                $formField = new FormField(
-                    $questionData['id'],
-                    $sectionData['id'],
-                    $questionData['text'],
-                    'text',
-                    Validator::in($answerValues),
-                    'Please select an answer.',
-                    true,
-                    true
-                );
-                $questionData['field'] = $formField;
-                $quizData['sections'][$sectionIndex]['questions'][$questionIndex] = $questionData;
-                $this->schema['fields'][$questionData['id']] = $formField;
-            }
-        }
-
-        // If the data could not be found, throw an exception
-        if ($quizData === false) {
-            throw new \Exception('Unable to find data for url query: ' . QUIZ_QUERY);
-        }
-
-        // Set the data
-        $this->data = $quizData;
-
-        // Set the sections in the schema
-        foreach($this->data['sections'] as $section) {
-            $this->schema['sections'][$section['id']] = $section['title'];
-        }
-
-        return $this->data;
     }
 
     /**

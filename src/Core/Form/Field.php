@@ -75,6 +75,7 @@ final class Field
      *
      * Performs required checks, type casting, min/max constraints, 
      * and data-type specific validation (e.g., email, phone, name).
+     * If validated, the value will be stored.
      *
      * @param mixed $value The value to validate.
      * @return bool True if valid, false if not.
@@ -101,6 +102,8 @@ final class Field
         if (!$this->validateDataType($castValue)) {
             return false;
         }
+
+        $this->value = $castValue;
 
         return true;
     }
@@ -264,10 +267,10 @@ final class Field
     /**
      * Set the score of the form field. Only allows being set once.
      * 
-     * @param int|string $score The score to assign.
-     * @return int|string The stored score.
+     * @param mixed $score The score to assign.
+     * @return mixed The stored score.
      */
-    public function setScore(int|string $score): int|string
+    public function setScore(mixed $score): mixed
     {
         if ($this->score !== null) {
             throw new \LogicException("Score value for form field {$this->id} has already been set and cannot be changed.");
@@ -279,9 +282,9 @@ final class Field
     /**
      * Get the value of the form field.
      * 
-     * @return int|float|string|null The field value.
+     * @return mixed The field value.
      */
-    public function getValue(): int|float|string|null
+    public function getValue(): mixed
     {
         return $this->value;
     }
@@ -289,9 +292,9 @@ final class Field
     /**
      * Get the score of the form field.
      * 
-     * @return int|string|null The field score.
+     * @return mixed The field score.
      */
-    public function getScore(): int|string|null
+    public function getScore(): mixed
     {
         return $this->score;
     }

@@ -38,6 +38,11 @@ final class Initializer
 
     /**
      * Register the main plugin menu and subpages.
+     * 
+     * @see https://developer.wordpress.org/reference/functions/add_menu_page/
+     * @see https://developer.wordpress.org/reference/functions/add_submenu_page/
+     * 
+     * @return void
      */
     public function registerDashboardMenu(): void
     {
@@ -71,6 +76,10 @@ final class Initializer
 
     /**
      * Register plugin settings using WordPress Settings API
+     * 
+     * @see https://developer.wordpress.org/reference/functions/register_setting/
+     * 
+     * @return void
      */
     public function registerSettings(): void
     {

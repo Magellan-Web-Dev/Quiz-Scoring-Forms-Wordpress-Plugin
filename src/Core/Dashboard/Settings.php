@@ -7,7 +7,9 @@ namespace QuizScoringForms\Core\Dashboard;
 use QuizScoringForms\Config;
 use QuizScoringForms\UI\Dashboard\Settings as SettingsUI;
 
-/** Prevent direct access */
+/** 
+ * Prevent direct access from sources other than the Wordpress environment
+ */
 if (!defined('ABSPATH')) exit;
 
 /**
