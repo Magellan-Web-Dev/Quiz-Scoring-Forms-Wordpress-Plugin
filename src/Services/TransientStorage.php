@@ -25,14 +25,14 @@ class TransientStorage {
      *
      * @var string
      */
-    private readonly string $key;
+    public readonly string $key;
 
     /**
      * The time to expiration of the transient data in seconds.
      *
      * @var int
      */
-    private readonly int $timeToExpiration;
+    public readonly int $timeToExpiration;
 
     /**
      * Constructor

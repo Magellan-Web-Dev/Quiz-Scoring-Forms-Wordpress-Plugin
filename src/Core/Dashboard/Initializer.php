@@ -24,7 +24,7 @@ if (!defined('ABSPATH')) exit;
  */
 final class Initializer
 {
-    private PostRegisterHandler $postHandler;
+    public readonly PostRegisterHandler $postHandler;
 
     public function __construct()
     {

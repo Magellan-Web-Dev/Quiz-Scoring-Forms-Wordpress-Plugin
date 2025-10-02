@@ -16,10 +16,6 @@ class Schema {
 
     private array $fields = [];
 
-    public function getFields(): array {
-        return $this->fields;
-    }
-
     public function appendField(array $section, array $question, int $order) {
         $this->fields[] = new FormField(
             $question['id'],
@@ -35,5 +31,9 @@ class Schema {
             true,
             true
         );
+    }
+
+    public function getFields(): array {
+        return $this->fields;
     }
 }

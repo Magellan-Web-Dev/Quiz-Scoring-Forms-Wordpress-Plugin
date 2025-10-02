@@ -24,10 +24,10 @@ if (!defined('ABSPATH')) exit;
 final class PostMetaBox
 {
     public function __construct(
-        private readonly string $postType,
-        private readonly string $metaKey,
-        private readonly string $nonceAction,
-        private readonly string $nonceName
+        public readonly string $postType,
+        public readonly string $metaKey,
+        public readonly string $nonceAction,
+        public readonly string $nonceName
     ) {}
 
     /**

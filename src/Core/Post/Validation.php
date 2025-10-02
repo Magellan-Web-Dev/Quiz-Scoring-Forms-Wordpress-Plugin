@@ -23,11 +23,11 @@ if (!defined('ABSPATH')) exit;
  */
 final class Validation
 {
-    private string $nonceAction;
-    private string $nonceName;
-    private string $storageKey;
-    public Storage $storedData;
-    public Storage $storedErrors;
+    public readonly string $nonceAction;
+    public readonly string $nonceName;
+    public readonly string $storageKey;
+    public readonly Storage $storedData;
+    public readonly Storage $storedErrors;
 
     public function __construct($nonceAction, $nonceName, $storageKey) {
         $this->nonceAction = $nonceAction;

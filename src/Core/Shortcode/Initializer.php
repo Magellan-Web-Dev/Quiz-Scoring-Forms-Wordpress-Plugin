@@ -17,7 +17,7 @@ if (!defined('ABSPATH')) exit;
 
 final class Initializer {
 
-    public FormDataHandler $formData;
+    public readonly FormDataHandler $formData;
 
     public function __construct() {
         add_shortcode(Config::SLUG, [$this, 'shortcodeCallbackInit']);

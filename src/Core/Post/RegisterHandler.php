@@ -29,37 +29,37 @@ final class RegisterHandler
      * The key for storing the quiz data in the transient storage.
      * @var string
      */
-    private const DATA_STORAGE_KEY = 'quiz_post';
+    public const DATA_STORAGE_KEY = 'quiz_post';
 
     /**
      * The meta key for storing the quiz data in the post meta table.
      * @var string
      */
-    private string $metaKey;
+    public readonly string $metaKey;
 
     /**
      * The nonce action name for the quiz meta box.
      * @var string
      */
-    private string $nonceAction;
+    public readonly string $nonceAction;
 
     /**
      * The nonce name for the quiz meta box.
      * @var string
      */
-    private string $nonceName;
+    public readonly string $nonceName;
 
     /**
      * The router responsible for exposing the quiz data through the REST API.
      * @var APIRouter
      */
-    private APIRouter $apiRouter;
+    public readonly APIRouter $apiRouter;
 
     /**
      * The validation object responsible for validating the quiz data.
      * @var Validation
      */
-    private Validation $validation;
+    public readonly Validation $validation;
 
     /**
      * Constructor
