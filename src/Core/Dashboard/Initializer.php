@@ -7,6 +7,7 @@ namespace QuizScoringForms\Core\Dashboard;
 use QuizScoringForms\Config;
 use QuizScoringForms\Core\Post\RegisterHandler as PostRegisterHandler;
 use QuizScoringForms\UI\Dashboard\Settings as SettingsUI;
+use QuizScoringForms\UI\Dashboard\MainInterface as DashboardUI;
 
 /** Prevent direct access */
 if (!defined('ABSPATH')) exit;
@@ -58,7 +59,7 @@ final class Initializer
             Config::PLUGIN_NAME,
             'manage_options',
             Config::SLUG . '_dashboard',
-            [\QuizScoringForms\UI\Dashboard\MainInterface::class, 'renderHome'],
+            [DashboardUI::class, 'renderHome'],
             'dashicons-welcome-learn-more',
             25
         );
@@ -69,7 +70,7 @@ final class Initializer
             'Settings',
             'manage_options',
             'settings',
-            [\QuizScoringForms\UI\Dashboard\MainInterface::class, 'renderSettings']
+            [DashboardUI::class, 'renderSettings']
         );
 
         add_submenu_page(

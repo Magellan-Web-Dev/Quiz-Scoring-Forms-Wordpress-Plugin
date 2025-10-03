@@ -21,10 +21,14 @@ final class MainInterface
      */
     public static function renderHome(): void
     {
+        $settings_url = admin_url('admin.php?page=settings');
+        $quizzes_url  = admin_url('edit.php?post_type=' . Config::POST_TYPE);
         ?>
         <div class="wrap">
             <h1><?= esc_html(Config::PLUGIN_NAME) ?></h1>
             <p>Welcome to the plugin dashboard! Use the menu to navigate.</p>
+            <a class="button button-primary" href="<?= esc_url($settings_url) ?>">Go To Settings</a>
+            <a class="button" href="<?= esc_url($quizzes_url) ?>">Go To Quiz Posts</a>
         </div>
         <?php
     }
