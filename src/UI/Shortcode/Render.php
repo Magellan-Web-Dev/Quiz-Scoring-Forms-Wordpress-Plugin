@@ -15,6 +15,8 @@ if (!defined('ABSPATH')) exit;
 final class Render 
 {
 
+    private int $globalIndex = 0;
+
     public function __construct(
         public readonly object $data
     ) {}
@@ -31,8 +33,25 @@ final class Render
     {
         ?>
             <main class="<?=Config::PLUGIN_ABBREV?>-main-container">
-                <?= self::renderFormContent() ?>
+                
             </main>
+            <script>
+                // Question Value Schema
+                const questionValueSchema = [
+                    <?php foreach ($this->data->results as $score) : ?>
+                        { text: "<?php echo esc_js($score['text']); ?>", value: "<?php echo esc_js($score['value']); ?>" },
+                    <?php endforeach; ?>
+                ];
+            </script>
+
+            <script type="importmap">
+                {
+                    "imports": {
+                        "alpinejs": "<?= Config::ASSETS_PATH; ?>/node_modules/alpinejs/dist/module.esm.js"
+                    }
+                }
+            </script>
+            <script src="<?= Config::ASSETS_PATH; ?>/js/main.js" type="module"></script>
         <?php
     }
 
@@ -51,66 +70,7 @@ final class Render
 
             <?= $this->renderContactSection() ?>
             <?= $this->renderQuestionSections() ?>
-
-
-                <!-- Answered Questions Section -->
-                <section class="answered-questions-sections" id="answered-questions-sections" data-section="answers" :class="{ 'active': currentSection === 'answers' }">
-                    <div class="answered-questions-section">
-                        <h3>Check Your Answers. Click Edit To Change The Answer</h3>
-                        <?php foreach ($data['sections'] as $section) : 
-                            $section_id    = esc_attr($section['id']);
-                            $section_title = esc_html($section['title']);
-                        ?>
-                            <div class="answered-questions-section" id="answered-questions-section-<?php echo $section_id; ?>" data-section_answers_item="<?php echo $section_id; ?>">
-                                <h3><?php echo $section_title; ?></h3>
-                                <ol>
-                                    <?php foreach ($section['questions'] as $qIndex => $question) : 
-                                        $question_id   = esc_attr($question['id']);
-                                        $question_text = esc_html($question['text']);
-                                    ?>
-                                        <li>
-                                            <h4>Question</h4>
-                                            <p><?php echo $question_text; ?></p>
-                                            <h4>Answer</h4> 
-                                            <p 
-                                                data_answered_question="<?php echo $question_id; ?>"
-                                                x-text="form['question-<?php echo $question_id; ?>'] 
-                                                    ? getLabel(form['question-<?php echo $question_id; ?>'], questionValueSchema) 
-                                                    : 'Not answered yet'"
-                                            ></p>
-                                            <button
-                                                type="button"
-                                                x-on:click="editAnswer('<?php echo $question_id; ?>', <?php echo (int) $qIndex; ?>)"
-                                            >
-                                                Edit
-                                            </button>
-                                        </li>
-                                    <?php endforeach; ?>
-                                </ol>
-                            </div>
-                        <?php endforeach; ?>
-                    </div>
-                    <button type="submit" x-on:click="validateAll($event)">Submit</button>
-                </section>
             </form>
-
-            <script>
-                // Question Value Schema
-                const questionValueSchema = [
-                    <?php foreach ($data['scoring'] as $label => $score) : ?>
-                        { label: "<?php echo esc_js($label); ?>", score: "<?php echo esc_js($score); ?>" },
-                    <?php endforeach; ?>
-                ];
-            </script>
-
-            <script type="importmap">
-                {
-                    "imports": {
-                        "alpinejs": "/node_modules/alpinejs/dist/module.esm.js"
-                    }
-                }
-            </script>
-            <script src="/js/main.js" type="module"></script>
         <?php
     }
 
@@ -166,7 +126,6 @@ final class Render
             <section class="questions-sections" id="questions-sections" data-section="questions" :class="{ 'active': currentSection === 'questions' }">
                 <h3 class="section-title"><?php echo esc_html($this->data->instructions); ?></h3>
                 <?php 
-                $globalIndex = 0; 
                 $sectionStartIndex = 0; 
                 foreach ($this->data->schema->getAllQuestionsSections() as $section) :
                     $section_id    = esc_attr($section->id);
@@ -185,7 +144,7 @@ final class Render
                         <h4 class="question-section-title"><?php echo $section_title; ?></h4>
                         <?php foreach ($section['questions'] as $index => $question):?>
                             <?= $this->renderQuestionField($question); ?>
-                            <?php $globalIndex++; ?>
+                            <?php $this->globalIndex++; ?>
                         <?php endforeach; ?>
                     </div>
                     <?php $sectionStartIndex += $sectionQuestionsCount; ?>
@@ -203,7 +162,7 @@ final class Render
                 class="question-item" 
                 id="question-<?php echo $question_id; ?>" 
                 data-question_item="<?php echo $question_id; ?>"
-                :class="{ 'active': globalQuestionIndex === <?php echo $globalIndex; ?> }"
+                :class="{ 'active': globalQuestionIndex === <?php echo $this->globalIndex; ?> }"
             >
                 <p class="question-heading"><?php echo $question_text; ?></p>
                 <div class="question-choices" data-question_choices="<?php echo $question_id; ?>">
@@ -235,6 +194,51 @@ final class Render
                     class="field-error-text">
                 </span>
             </div>
+        <?php
+    }
+
+    private function renderAnsweredQuestionsSection($data) {
+        ?>
+            <!-- Answered Questions Section -->
+            <section class="answered-questions-sections" id="answered-questions-sections" data-section="answers" :class="{ 'active': currentSection === 'answers' }">
+                <div class="answered-questions-section">
+                    <h3>Check Your Answers. Click Edit To Change The Answer</h3>
+                    <?php foreach ($data['sections'] as $section) : 
+                        $section_id    = esc_attr($section['id']);
+                        $section_title = esc_html($section['title']);
+                    ?>
+                        <div class="answered-questions-section" id="answered-questions-section-<?php echo $section_id; ?>" data-section_answers_item="<?php echo $section_id; ?>">
+                            <h3><?php echo $section_title; ?></h3>
+                            <ol>
+                                <?php foreach ($section['questions'] as $qIndex => $question) : 
+                                    $question_id   = esc_attr($question['id']);
+                                    $question_text = esc_html($question['text']);
+                                ?>
+                                    <li>
+                                        <h4>Question</h4>
+                                        <p><?php echo $question_text; ?></p>
+                                        <h4>Answer</h4> 
+                                        <p 
+                                            data_answered_question="<?php echo $question_id; ?>"
+                                            x-text="form['question-<?php echo $question_id; ?>'] 
+                                                ? getLabel(form['question-<?php echo $question_id; ?>'], questionValueSchema) 
+                                                : 'Not answered yet'"
+                                        ></p>
+                                        <button
+                                            type="button"
+                                            x-on:click="editAnswer('<?php echo $question_id; ?>', <?php echo (int) $qIndex; ?>)"
+                                        >
+                                            Edit
+                                        </button>
+                                    </li>
+                                <?php endforeach; ?>
+                            </ol>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+                <button type="submit" x-on:click="validateAll($event)">Submit</button>
+            </section>
+        <!-- /Answered Questions Section -->
         <?php
     }
 }
