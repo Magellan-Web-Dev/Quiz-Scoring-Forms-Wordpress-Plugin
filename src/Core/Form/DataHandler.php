@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace QuizScoringForms\Core\Form;
 
-use QuizScoringForms\Core\Form\Schema;
+use QuizScoringForms\Core\Form\Schema\Initializer as Schema;
 
 /** 
  * Prevent direct access from sources other than the Wordpress environment

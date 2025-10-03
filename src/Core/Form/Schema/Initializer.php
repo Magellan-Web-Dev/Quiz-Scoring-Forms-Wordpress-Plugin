@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace QuizScoringForms\Core\Form;
+namespace QuizScoringForms\Core\Form\Schema;
 
-use QuizScoringForms\Core\Form\Field as FormField;
-use QuizScoringForms\Core\Form\Section as FormSection;
+use QuizScoringForms\Core\Form\Schema\Field as FormField;
+use QuizScoringForms\Core\Form\Schema\Section as FormSection;
 
 /** 
  * Prevent direct access from sources other than the Wordpress environment
@@ -14,11 +14,11 @@ use QuizScoringForms\Core\Form\Section as FormSection;
 if (!defined('ABSPATH')) exit;
 
 /**
- * Class Schema
+ * Class Initializer
  *
  * Represents a form schema that contains questions and sections.
  */
-class Schema {
+class Initializer {
 
     /**
      * Array of FormField objects that represent the questions in the form.
