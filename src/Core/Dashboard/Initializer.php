@@ -120,12 +120,12 @@ final class Initializer
         // -------------------------------
         register_setting(
             Config::SLUG_UNDERSCORE,
-            Config::PLUGIN_ABBREV . '_contact_fields',
+            Config::PLUGIN_ABBREV . '_'.Config::CONTACT_FIELDS_SLUG.'',
             ['sanitize_callback' => [self::class, 'sanitizeContactFields']]
         );
 
         add_settings_section(
-            Config::PLUGIN_ABBREV . '_contact_fields_section',
+            Config::PLUGIN_ABBREV . '_'.Config::CONTACT_FIELDS_SLUG.'_section',
             'Contact Fields',
             function() {
                 echo '<p>Set the contact fields that will be displayed on each '.Config::POST_TYPE.' form.  These will come first before the quiz questions.</p>';
@@ -134,11 +134,11 @@ final class Initializer
         );
 
         add_settings_field(
-            Config::PLUGIN_ABBREV . '_contact_fields',
+            Config::PLUGIN_ABBREV . '_'.Config::CONTACT_FIELDS_SLUG.'',
             'Fields',
             [SettingsUI::class, 'renderContactFields'],
             Config::SLUG_UNDERSCORE,
-            Config::PLUGIN_ABBREV . '_contact_fields_section'
+            Config::PLUGIN_ABBREV . '_'.Config::CONTACT_FIELDS_SLUG.'_section'
         );
     }
 
@@ -150,12 +150,14 @@ final class Initializer
      */
     public static function sanitizeContactFields($fields): array {
         $clean = [];
+        $idIncrementer = 1;
         if (is_array($fields)) {
             foreach ($fields as $field) {
                 if (empty($field['name']) || empty($field['type'])) {
                     continue; // skip blanks
                 }
                 $entry = [
+                    'id' => 'c' . $idIncrementer,
                     'name' => sanitize_text_field($field['name']),
                     'placeholder' => sanitize_text_field($field['placeholder'] ?? ''),
                     'type' => sanitize_text_field($field['type']),
@@ -173,6 +175,7 @@ final class Initializer
                     }
                 }
                 $clean[] = $entry;
+                $idIncrementer++;
             }
         }
         return $clean;

@@ -40,6 +40,13 @@ final class DataHandler {
     public readonly string $instructions;
 
     /**
+     * Array of contact fields in the quiz.
+     * 
+     * @var array
+     */
+    public readonly array $contactFields;
+
+    /**
      * Array of questionsections in the quiz.
      *
      * @var array
@@ -77,13 +84,14 @@ final class DataHandler {
         $this->title = $postData['title'];
         $this->description = $postData['description'];
         $this->instructions = $postData['instructions'];
-        $this->questionSections = $postData['sections'];
+        $this->contactFields = $postData['contactFields'];
+        $this->questionSections = $postData['questionSections'];
         $this->answers = $postData['answers'];
         $this->results = $postData['results'];
         $this->schema = new Schema();
 
+        // $this->setContactFieldsData();
         $this->setQuestionsData();
-        var_dump(json_encode($this->schema->getFields()));
     }
 
     /**

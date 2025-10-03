@@ -75,9 +75,12 @@ final class Settings
             .contact-field-options { margin-top: 12px; }
             .contact-field-group {
                 padding: 6px;
-                border: 2px #2271b1 solid;
+                border: 1px #2271b1 solid;
                 border-radius: 4px;
                 width: fit-content;
+                margin-bottom: 12px;
+            }
+            .contact-fields-wrapper .contact-field-group:not(:first-child) {
                 margin-top: 12px;
             }
             .contact-field-option, .add-option { margin-top: 6px !important; }

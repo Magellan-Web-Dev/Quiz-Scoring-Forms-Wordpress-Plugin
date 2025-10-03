@@ -28,7 +28,7 @@ final class MainInterface
             <h1><?= esc_html(Config::PLUGIN_NAME) ?></h1>
             <p>Welcome to the plugin dashboard! Use the menu to navigate.</p>
             <a class="button button-primary" href="<?= esc_url($settings_url) ?>">Go To Settings</a>
-            <a class="button" href="<?= esc_url($quizzes_url) ?>">Go To Quiz Posts</a>
+            <a class="button" href="<?= esc_url($quizzes_url) ?>">Go To <?= ucfirst(Config::POST_TYPE) ?> Posts</a>
         </div>
         <?php
     }
