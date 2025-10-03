@@ -95,7 +95,7 @@ class TransientStorage {
     private function parseConcatId($concatId): string 
     {
         if ($concatId !== '') {
-            return $concatId = '_' . $concatId;
+            return '_' . $concatId;
         }
         return '';
     }
