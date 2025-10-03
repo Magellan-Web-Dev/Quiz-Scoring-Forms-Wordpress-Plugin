@@ -128,7 +128,7 @@ final class Initializer
             Config::PLUGIN_ABBREV . '_contact_fields_section',
             'Contact Fields',
             function() {
-                echo '<p>Set the contact fields that will be displayed on each quiz form.  These will come first before the quiz questions.</p>';
+                echo '<p>Set the contact fields that will be displayed on each '.Config::POST_TYPE.' form.  These will come first before the quiz questions.</p>';
             },
             Config::SLUG_UNDERSCORE
         );

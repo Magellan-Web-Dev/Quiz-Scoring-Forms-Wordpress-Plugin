@@ -76,7 +76,7 @@ final class Plugin {
      * @return bool
      */
     private static function minPHPVersionVerify(): bool {
-        if (!version_compare(PHP_VERSION, '8.1.0', '>=')) {
+        if (!version_compare(PHP_VERSION, Config::MIN_PHP_VERSION, '>=')) {
             ErrorGenerator::generate('Quiz Scoring Forms is currently not running', 'This plugin requires PHP version 8.1 or higher to be installed.');
             return false;
         }

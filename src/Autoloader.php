@@ -62,7 +62,7 @@ final class Autoloader
 
         // Require file if it exists
         if (file_exists($file)) {
-            require $file;
+            require_once $file;
         }
     }
 }
