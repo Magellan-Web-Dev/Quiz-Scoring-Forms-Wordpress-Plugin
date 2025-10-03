@@ -41,14 +41,15 @@ class Initializer
      * @param int $order The order of the section.
      * @param array $questionIds The IDs of the questions in the section.
      */
-    public function addSection(array $section, int $order, array $questionIds): void 
+    public function addSection(array $section, int $order, array $questionIds, bool $isQuestion): void 
     {
         $this->sections[] = new FormSection(
             $this->setIdNamespace($section['id']),
             $section['title'],
             $section['slug'],
             $order,
-            $questionIds
+            $questionIds,
+            $isQuestion
         );
     }
 
@@ -131,7 +132,7 @@ class Initializer
      * 
      * @return array<FormField>
      */
-    public function getFields(): array 
+    public function getAllFields(): array 
     {
         return $this->fields;
     }
@@ -141,8 +142,46 @@ class Initializer
      * 
      * @return array<FormSection>
      */
-    public function getSections(): array 
+    public function getAllSections(): array 
     {
         return $this->sections;
+    }
+
+    /**
+     * Returns the array of FormField objects that are not questions, sorted in order.
+     * 
+     * @return array<FormField>
+     */
+    public function getAllContactFields(): array 
+    {
+        $contactFields = array_filter(
+            $this->fields, 
+            fn($field) => !$field->isQuestion
+        );
+
+        usort($contactFields, function($a, $b) {
+            return $a->order <=> $b->order; 
+        });
+
+        return $contactFields;
+    }
+
+    /**
+     * Returns the array of FormSection objects that are questions, sorted in order.
+     * 
+     * @return array<FormSection>
+     */
+    public function getAllQuestionsSections(): array 
+    {
+        $questionSections = array_filter(
+            $this->sections, 
+            fn($section) => $section->questionSection
+        );
+
+        usort($questionSections, function($a, $b) {
+            return $a->order <=> $b->order;
+        });
+
+        return $questionSections;
     }
 }

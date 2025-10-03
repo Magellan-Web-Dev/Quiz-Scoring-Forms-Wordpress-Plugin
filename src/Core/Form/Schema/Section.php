@@ -23,6 +23,7 @@ final class Section
         public readonly string $title,
         public readonly string $slug,
         public readonly int $order,
-        public readonly array $fields
+        public readonly array $fields,
+        public readonly bool $questionSection
     ) {}
 }

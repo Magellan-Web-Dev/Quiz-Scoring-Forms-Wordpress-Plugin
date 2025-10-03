@@ -93,9 +93,6 @@ final class DataHandler {
 
         $this->setContactsData();
         $this->setQuestionsData();
-
-        // USED FOR TESTING
-        var_dump(json_encode($this->schema->getFields()));
     }
 
     /**
@@ -110,7 +107,7 @@ final class DataHandler {
             'title' => 'Contacts',
             'slug' => 'contacts',
         ];
-        $this->schema->addSection($contactSectionData, 0, $this->getContactSectionIds());
+        $this->schema->addSection($contactSectionData, 0, $this->getContactSectionIds(), false);
         foreach($this->contactSection as $contactIndex => $contactField) {
             $this->schema->addContactField($contactSectionData, $contactField, ($contactIndex + 1));
         }
@@ -124,7 +121,7 @@ final class DataHandler {
     private function setQuestionsData():void 
     {
         foreach($this->questionSections as $sectionIndex => $questionSection) {
-            $this->schema->addSection($questionSection, ($sectionIndex + 1), $this->getSectionQuestionsIds($questionSection));
+            $this->schema->addSection($questionSection, ($sectionIndex + 1), $this->getSectionQuestionsIds($questionSection), true);
             foreach($questionSection['questions'] as $questionIndex => $question) {
                 $this->schema->addQuestionField($questionSection, $question, ($questionIndex + 1));
             }
@@ -174,14 +171,5 @@ final class DataHandler {
         foreach($schema as $s) {
             $this->schema['fields'][$s->get('id')] = $s;
         }
-    }
-
-    /**
-     * Get the schema used to validate form data.
-     * @return array
-     */
-    public function getSchema(): Schema 
-    {
-        return $this->schema;
     }
 }
