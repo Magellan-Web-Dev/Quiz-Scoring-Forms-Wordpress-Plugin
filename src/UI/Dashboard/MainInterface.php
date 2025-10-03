@@ -53,6 +53,10 @@ final class MainInterface
     }
 
     // === Field renderers ===
+    
+    /**
+     * Render logo field
+     */
     public static function renderLogoField(): void
     {
         $logo = get_option(Config::PLUGIN_ABBREV . 'logo', '');
@@ -60,18 +64,27 @@ final class MainInterface
         echo '<button class="button upload-logo">Upload</button>';
     }
 
+    /**
+     * Render email to field
+     */
     public static function renderEmailToField(): void
     {
         $value = get_option(Config::PLUGIN_ABBREV . 'email_to', '');
         echo '<input type="email" name="qsf_email_to" value="' . esc_attr($value) . '" style="width:50%;">';
     }
 
+    /**
+     * Render email from field
+     */
     public static function renderEmailFromField(): void
     {
         $value = get_option(Config::PLUGIN_ABBREV . 'email_from', '');
         echo '<input type="email" name="qsf_email_from" value="' . esc_attr($value) . '" style="width:50%;">';
     }
 
+    /**
+     * Render email subject field
+     */
     public static function renderEmailSubjectField(): void
     {
         $value = get_option(Config::PLUGIN_ABBREV . 'email_subject', '');

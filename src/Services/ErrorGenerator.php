@@ -65,7 +65,8 @@ final class ErrorGenerator
      * @return void
      */
 
-    public static function errorHTMLMsg($msg): string {
+    public static function errorHTMLMsg($msg): string 
+    {
         return '<div class="'.Config::SLUG.'-err-msg notice-error notice is-dismissible"><p>'. esc_html($msg).'</p></div>';
     }
 

@@ -70,7 +70,8 @@ final class Router
      * 
      * @return void
      */
-    public function getAllPosts() {
+    public function getAllPosts() 
+    {
         register_rest_route($this->namespace, '/' . $this->restBase, [
             'methods'             => 'GET',
             'callback'            => [$this->controller, 'getQuizzes'],
@@ -84,7 +85,8 @@ final class Router
      * 
      * @return void
      */
-    public function getPostById() {
+    public function getPostById() 
+    {
         register_rest_route($this->namespace, '/' . $this->restBase . '/(?P<id>\d+)', [
             'methods'             => 'GET',
             'callback'            => [$this->controller, 'getQuiz'],

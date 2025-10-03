@@ -148,7 +148,8 @@ final class Initializer
      * @param array $fields
      * @return array
      */
-    public static function sanitizeContactFields($fields): array {
+    public static function sanitizeContactFields($fields): array 
+    {
         $clean = [];
         $idIncrementer = 1;
         if (is_array($fields)) {

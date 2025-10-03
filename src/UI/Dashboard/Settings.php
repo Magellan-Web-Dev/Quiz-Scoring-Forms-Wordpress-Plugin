@@ -9,9 +9,13 @@ use QuizScoringForms\Config;
 /** Prevent direct access */
 if (!defined('ABSPATH')) exit;
 
+/**
+ * Class Settings
+ * 
+ * Handles rendering of the plugin settings page.
+ */
 final class Settings
 {
-
     /**
      * Render Logo Field UI
      * 

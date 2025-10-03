@@ -40,7 +40,8 @@ class TransientStorage {
      * @param string $key The key used to store and retrieve transient data.
      * @param int $timeToExpiration The time to expiration of the transient data in seconds.
      */
-    public function __construct(string $key, int $timeToExpiration) {
+    public function __construct(string $key, int $timeToExpiration) 
+    {
         $this->key = $key;
         $this->timeToExpiration = $timeToExpiration;
     }
@@ -53,11 +54,9 @@ class TransientStorage {
      * @param string $concatId The id to concatenate to the key.
      * @return mixed The transient data associated with the provided key.
      */
-    public function get($concatId = ''): mixed {
-        if ($concatId !== '') {
-            $concatId = '_' . $concatId;
-        }
-        return get_transient(Config::SLUG_UNDERSCORE . '_' . $this->key . $concatId);
+    public function get($concatId = ''): mixed 
+    {
+        return get_transient(Config::SLUG_UNDERSCORE . '_' . $this->key . $this->parseConcatId($concatId));
     }
 
     /**
@@ -69,11 +68,9 @@ class TransientStorage {
      * @param string $concatId The id to concatenate to the key.
      * @return void
      */
-    public function set($value, $concatId = ''): void {
-        if ($concatId !== '') {
-            $concatId = '_' . $concatId;
-        }
-        set_transient(Config::SLUG_UNDERSCORE . '_' . $this->key . $concatId, $value, $this->timeToExpiration);
+    public function set($value, $concatId = ''): void 
+    {
+        set_transient(Config::SLUG_UNDERSCORE . '_' . $this->key . $this->parseConcatId($concatId), $value, $this->timeToExpiration);
     }
 
     /**
@@ -84,10 +81,22 @@ class TransientStorage {
      * @param string $concatId The id to concatenate to the key.
      * @return void
      */
-    public function delete($concatId = ''): void {
+    public function delete($concatId = ''): void 
+    {
+        delete_transient(Config::SLUG_UNDERSCORE . '_' . $this->key . $this->parseConcatId($concatId));
+    }
+
+    /**
+     * Concatenates the provided id to the key.
+     * 
+     * @param string $concatId The id to concatenate to the key.
+     * @return string The concatenated id.
+     */
+    private function parseConcatId($concatId): string 
+    {
         if ($concatId !== '') {
-            $concatId = '_' . $concatId;
+            return $concatId = '_' . $concatId;
         }
-        delete_transient(Config::SLUG_UNDERSCORE . '_' . $this->key . $concatId);
+        return '';
     }
 }

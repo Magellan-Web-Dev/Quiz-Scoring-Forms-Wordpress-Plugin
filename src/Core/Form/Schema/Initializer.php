@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace QuizScoringForms\Core\Form\Schema;
 
+use QuizScoringForms\Config;
 use QuizScoringForms\Core\Form\Schema\Field as FormField;
 use QuizScoringForms\Core\Form\Schema\Section as FormSection;
 
@@ -18,7 +19,8 @@ if (!defined('ABSPATH')) exit;
  *
  * Represents a form schema that contains questions and sections.
  */
-class Initializer {
+class Initializer 
+{
 
     /**
      * Array of FormField objects that represent the questions in the form.
@@ -33,15 +35,72 @@ class Initializer {
     private array $sections = [];
 
     /**
+     * Adds a FormSection object to the schema.
+     * 
+     * @param array $section The section object containing the ID, title, slug, and order.
+     * @param int $order The order of the section.
+     * @param array $questionIds The IDs of the questions in the section.
+     */
+    public function addSection(array $section, int $order, array $questionIds): void 
+    {
+        $this->sections[] = new FormSection(
+            $this->setIdNamespace($section['id']),
+            $section['title'],
+            $section['slug'],
+            $order,
+            $questionIds
+        );
+    }
+
+    /** 
+     * Adds a FormField object to the schema.
+     * 
+     * @param array $contactSection The contact section object containing the ID.
+     * @param array $contact The contact field object containing the ID, type, name, placeholder, and required.
+     * @param int $order The order of the contact field.
+     * 
+     * @return void
+     * 
+    */
+    public function addContactField(array $contactSection, array $contact, int $order): void 
+    {
+        $dataType = match($contact['type']) {
+            'text' => 'string',
+            'email' => 'email',
+            'tel' => 'phone',
+            'number' => 'int',
+            default => 'string',
+        };
+
+        $this->fields[] = new FormField(
+            $this->setIdNamespace($contact['id']),
+            $contactSection['id'],
+            $order,
+            $contact['type'],
+            $contact['name'],
+            $contact['placeholder'],
+            $dataType,
+            2,
+            50,
+            'Please enter your ' . strtolower($contact['name']),
+            $contact['required'],
+            false
+        );
+    }
+
+    /**
      * Adds a FormField object to the schema.
      * 
      * @param array $section The section object containing the ID, title, slug, and order.
      * @param array $question The question object containing the ID, text, and order.
      * @param int $order The order of the question in the section.
+     * 
+     * @return void
      */
-    public function addQuestionField(array $section, array $question, int $order): void {
+    public function addQuestionField(array $section, array $question, int $order): void 
+    {
         $this->fields[] = new FormField(
-            $question['id'],
+            $this->setIdNamespace($question['id']),
             $section['id'],
             $order,
             'radio',
@@ -57,20 +116,14 @@ class Initializer {
     }
 
     /**
-     * Adds a FormSection object to the schema.
+     * Sets the ID namespace for a given ID.  This helps prevent HTML ID conflicts.
      * 
-     * @param array $section The section object containing the ID, title, slug, and order.
-     * @param int $order The order of the section.
-     * @param array $questionIds The IDs of the questions in the section.
+     * @param string $id The ID to set the namespace for.
+     * @return string The ID with the namespace.
      */
-    public function addSection(array $section, int $order, array $questionIds): void {
-        $this->sections[] = new FormSection(
-            $section['id'],
-            $section['title'],
-            $section['slug'],
-            $order,
-            $questionIds
-        );
+    private function setIdNamespace($id) 
+    {
+        return Config::PLUGIN_ABBREV . '_' . $id;
     }
 
     /**
@@ -78,7 +131,8 @@ class Initializer {
      * 
      * @return array<FormField>
      */
-    public function getFields(): array {
+    public function getFields(): array 
+    {
         return $this->fields;
     }
 
@@ -87,7 +141,8 @@ class Initializer {
      * 
      * @return array<FormSection>
      */
-    public function getSections(): array {
+    public function getSections(): array 
+    {
         return $this->sections;
     }
 }

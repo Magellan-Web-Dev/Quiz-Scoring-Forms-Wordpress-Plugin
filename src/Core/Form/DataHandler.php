@@ -40,11 +40,11 @@ final class DataHandler {
     public readonly string $instructions;
 
     /**
-     * Array of contact fields in the quiz.
+     * Array of contact sectionfields in the quiz.
      * 
      * @var array
      */
-    public readonly array $contactFields;
+    public readonly array $contactSection;
 
     /**
      * Array of questionsections in the quiz.
@@ -80,18 +80,40 @@ final class DataHandler {
      * @param array $postData
      * @return void
      */
-    public function __construct(array $postData) {
+    public function __construct(array $postData) 
+    {
         $this->title = $postData['title'];
         $this->description = $postData['description'];
         $this->instructions = $postData['instructions'];
-        $this->contactFields = $postData['contactFields'];
+        $this->contactSection = $postData['contactSection'];
         $this->questionSections = $postData['questionSections'];
         $this->answers = $postData['answers'];
         $this->results = $postData['results'];
         $this->schema = new Schema();
 
-        // $this->setContactFieldsData();
+        $this->setContactsData();
         $this->setQuestionsData();
+
+        // USED FOR TESTING
+        var_dump(json_encode($this->schema->getFields()));
+    }
+
+    /**
+     * Set the contacts data. Sets the schema for all the contact fields.
+     * 
+     * @return void
+     */
+    public function setContactsData(): void 
+    {
+        $contactSectionData = [
+            'id' => 'contacts',
+            'title' => 'Contacts',
+            'slug' => 'contacts',
+        ];
+        $this->schema->addSection($contactSectionData, 0, $this->getContactSectionIds());
+        foreach($this->contactSection as $contactIndex => $contactField) {
+            $this->schema->addContactField($contactSectionData, $contactField, ($contactIndex + 1));
+        }
     }
 
     /**
@@ -99,9 +121,8 @@ final class DataHandler {
      * 
      * @return void
      */
-
-    private function setQuestionsData():void {
-        $this->schema = new Schema();
+    private function setQuestionsData():void 
+    {
         foreach($this->questionSections as $sectionIndex => $questionSection) {
             $this->schema->addSection($questionSection, ($sectionIndex + 1), $this->getSectionQuestionsIds($questionSection));
             foreach($questionSection['questions'] as $questionIndex => $question) {
@@ -111,17 +132,32 @@ final class DataHandler {
     }
 
     /**
+     * Get the ids of the contact fields.
+     * 
+     * @return array
+     */
+    private function getContactSectionIds(): array 
+    {
+        $contactIds = [];
+        foreach($this->contactSection as $contactField) {
+            $contactIds[] = $contactField['id'];
+        }
+        return $contactIds;
+    }
+
+    /**
      * Get the ids of the questions in a section.
      * 
      * @param array $section
      * @return array
      */
-    private function getSectionQuestionsIds(array $section): array {
-        $questions = [];
+    private function getSectionQuestionsIds(array $section): array 
+    {
+        $questionIds = [];
         foreach($section['questions'] as $question) {
-            $questions[] = $question['id'];
+            $questionIds[] = $question['id'];
         }
-        return $questions;
+        return $questionIds;
     }
 
     /**
@@ -129,8 +165,8 @@ final class DataHandler {
      * @param array $schema
      * @return void
      */
-    public function addContactFields(array $schema):void {
-
+    public function addContactFields(array $schema):void 
+    {
         // Schema validation
         $revisedSchema = [];
 
@@ -144,33 +180,8 @@ final class DataHandler {
      * Get the schema used to validate form data.
      * @return array
      */
-    public function getSchema(): Schema {
-        return $this->schema;
-    }
-
-    /**
-     * Get the schema used to validate scoring data.
-     *
-     * @return array
-     */
-    public function getScoringSchema(): array
+    public function getSchema(): Schema 
     {
-        // If the scoring schema is not empty, return it
-        if (!empty($this->scoringSchema)) {
-            return $this->scoringSchema;
-        }
-
-        // If the data is empty, fetch it
-        if (empty($this->data)) {
-            $this->data = $this->getData();
-            // If the data is still empty after fetching, throw an exception
-            if (empty($this->data)) {
-                throw new \Exception('Unable to fetch data for scoring schema.');
-            }
-        }
-
-        // Set the scoring schema and return it
-        $this->scoringSchema = $this->getData()['scoring'];
-        return $this->scoringSchema;
+        return $this->schema;
     }
 }

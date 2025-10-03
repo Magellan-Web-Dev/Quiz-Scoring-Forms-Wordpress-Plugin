@@ -27,7 +27,8 @@ if (!defined('ABSPATH')) exit;
  * 
  * @package QuizScoringForms
  */
-final class Plugin {
+final class Plugin 
+{
 
     /**
      * @var Plugin|null $instance
@@ -47,7 +48,8 @@ final class Plugin {
     /**
      * Initialize the plugin
      */
-    public static function init(): void {
+    public static function init(): void 
+    {
         if (self::$instance !== null) return;
 
         if (!self::minPHPVersionVerify()) return;
@@ -63,7 +65,8 @@ final class Plugin {
      * 
      * @return static
      */
-    public static function instance(): self {
+    public static function instance(): self 
+    {
         if (self::$instance === null) {
             throw new \LogicException("Plugin not initialized yet.");
         }
@@ -75,7 +78,8 @@ final class Plugin {
      * 
      * @return bool
      */
-    private static function minPHPVersionVerify(): bool {
+    private static function minPHPVersionVerify(): bool 
+    {
         if (!version_compare(PHP_VERSION, Config::MIN_PHP_VERSION, '>=')) {
             ErrorGenerator::generate('Quiz Scoring Forms is currently not running', 'This plugin requires PHP version 8.1 or higher to be installed.');
             return false;
@@ -87,7 +91,8 @@ final class Plugin {
     /**
      * Load the plugin components
      */
-    private function loadPlugin(): void {
+    private function loadPlugin(): void 
+    {
         $this->dashboard = new Dashboard();
         $this->shortcode = new Shortcode();
     }
@@ -97,7 +102,8 @@ final class Plugin {
      * 
      * @return Dashboard
      */
-    public function getDashboard(): Dashboard {
+    public function getDashboard(): Dashboard 
+    {
         return $this->dashboard;
     }
 
@@ -106,7 +112,8 @@ final class Plugin {
      * 
      * @return Shortcode
      */
-    public function getShortcode(): Shortcode {
+    public function getShortcode(): Shortcode 
+    {
         return $this->shortcode;
     }
 }

@@ -16,12 +16,14 @@ if (!defined('ABSPATH')) exit;
  * Contains configuration values for the plugin.
  */
 
-final class Config {
+final class Config 
+{
     public const PLUGIN_NAME = 'Quiz Scoring Forms'; // The name of the plugin
+    public const VERSION = '1.0.0'; // The version of the plugin
     public const MIN_PHP_VERSION = '8.1.0'; // The minimum PHP version required
     public const SLUG = 'quiz-scoring-forms'; // The slug of the plugin
     public const SLUG_UNDERSCORE = 'quiz_scoring_forms'; // The underscored slug of the plugin
-    public const PLUGIN_ABBREV = 'qsf'; // The abbreviation of the plugin
+    public const PLUGIN_ABBREV = 'qsf'; // The abbreviation of the plugin.  This is used for HTML ID's and class names to prevent namespace conflicts
     public const POST_TYPE = 'quiz'; // The post type of the plugin
     public const POST_NAME = 'Quizzes'; // The name of the post type
     public const POST_NAME_SINGULAR = 'Quiz'; // The singular name of the post type

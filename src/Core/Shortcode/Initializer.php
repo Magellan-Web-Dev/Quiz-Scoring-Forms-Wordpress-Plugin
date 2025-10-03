@@ -6,7 +6,6 @@ namespace QuizScoringForms\Core\Shortcode;
 
 use QuizScoringForms\Config;
 use QuizScoringForms\Core\Shortcode\Data as ShortcodeData;
-use QuizScoringForms\Services\ErrorGenerator;
 use QuizScoringForms\Core\Form\DataHandler as FormDataHandler;
 use QuizScoringForms\UI\Shortcode\Render;
 
@@ -21,11 +20,13 @@ final class Initializer {
     public readonly ShortcodeData $data;
     public readonly FormDataHandler $formData;
 
-    public function __construct() {
+    public function __construct() 
+    {
         add_shortcode(Config::SLUG, [$this, 'shortcodeCallbackInit']);
     }
 
-    public function shortcodeCallbackInit(array $atts) {
+    public function shortcodeCallbackInit(array $atts) 
+    {
         $this->data = ShortcodeData::get($atts);
         if (!$this->data) {
             return Render::renderErrMsg('No quiz post data could be found.');

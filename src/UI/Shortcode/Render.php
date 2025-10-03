@@ -13,8 +13,12 @@ use QuizScoringForms\Config;
 
 if (!defined('ABSPATH')) exit;
 
-final class Render {
+final class Render 
+{
+    /**
+     * Render error message if shortcode data could not be found
+     */
     public static function renderErrMsg($msg): string {
-        return '<h3 class="'.Config::SLUG.'-err-msg err-msg">'. esc_html($msg).'</h3>';
+        return '<h3 class="'.Config::PLUGIN_ABBREV.'-err-msg err-msg">'. esc_html($msg).'</h3>';
     }
 }

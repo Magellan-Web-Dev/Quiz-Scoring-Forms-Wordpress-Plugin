@@ -5,9 +5,6 @@ declare(strict_types=1);
 namespace QuizScoringForms\Core\Shortcode;
 
 use QuizScoringForms\Config;
-use QuizScoringForms\Services\ErrorGenerator;
-use QuizScoringForms\Core\Form\DataHandler as FormDataHandler;
-use QuizScoringForms\UI\Shortcode\Render;
 
 /** 
  * Prevent direct access from sources other than the Wordpress environment
@@ -29,6 +26,7 @@ if (!defined('ABSPATH')) exit;
  * - modified: The modified date of the post.
  * - description: The description of the quiz.
  * - instructions: The instructions of the quiz.
+ * - contacts: The contacts of the quiz.
  * - sections: The sections of the quiz.
  * - answers: The answers of the quiz.
  * - results: The results of the quiz.
@@ -84,10 +82,10 @@ final class Data
         public readonly string $instructions,
 
         /**
-         * The contact fields in the plugin settings.
+         * The contact section fields in the plugin settings.
          * @var array
          */
-        public readonly array $contactFields,
+        public readonly array $contactSection,
 
         /**
          * The sections of the quiz.
@@ -106,8 +104,7 @@ final class Data
          * @var array
          */
         public readonly array $results
-    ) {
-    }
+    ) {}
 
     /**
      * Get an instance of the Data class.
@@ -165,7 +162,7 @@ final class Data
         }
         
         // Load contact settings data
-        $contactSettingsData = get_option(Config::PLUGIN_ABBREV . '_' . Config::CONTACT_FIELDS_SLUG, []);
+        $contactSectionSettingsData = get_option(Config::PLUGIN_ABBREV . '_' . Config::CONTACT_FIELDS_SLUG, []);
 
         // Build a clean response array (avoid returning raw WP_Post for JSON)
         $response = [
@@ -176,7 +173,7 @@ final class Data
             'modified'     => get_the_modified_date('', $post),
             'description'  => $meta['description']  ?? '',
             'instructions' => $meta['instructions'] ?? '',
-            'contactFields'     => $contactSettingsData ?? [],
+            'contactSection'     => $contactSectionSettingsData ?? [],
             'sections'     => $meta['sections']     ?? [],
             'answers'      => $meta['answers']      ?? [],
             'results'      => $meta['results']      ?? [],
@@ -191,7 +188,7 @@ final class Data
             $response['modified'],
             $response['description'],
             $response['instructions'],
-            $response['contactFields'],
+            $response['contactSection'],
             $response['sections'],
             $response['answers'],
             $response['results']

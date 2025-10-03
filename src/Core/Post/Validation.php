@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace QuizScoringForms\Core\Post;
 
 use QuizScoringForms\Config;
-use QuizScoringForms\Services;
 use QuizScoringForms\Services\ErrorGenerator as Errors;
 use QuizScoringForms\Services\TransientStorage as Storage;
 
@@ -29,13 +28,15 @@ final class Validation
     public readonly Storage $storedData;
     public readonly Storage $storedErrors;
 
-    public function __construct($nonceAction, $nonceName, $storageKey) {
+    public function __construct($nonceAction, $nonceName, $storageKey) 
+    {
         $this->nonceAction = $nonceAction;
         $this->nonceName   = $nonceName;
         $this->storageKey  = $storageKey;
         $this->storedData  = new Storage($this->storageKey . '_validation_data', 30);
         $this->storedErrors = new Storage($this->storageKey . '_validation_errors', 30);
     }
+
     /**
      * Validate post data before WordPress saves it.
      *
