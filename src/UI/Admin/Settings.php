@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace QuizScoringForms\UI\Dashboard;
+namespace QuizScoringForms\UI\Admin;
 
 use QuizScoringForms\Config;
 
@@ -21,7 +21,7 @@ final class Settings
      * 
      * @return void
      */
-    public static function renderLogoField(): void
+    public function renderLogoField(): void
     {
         $logo = get_option(Config::PLUGIN_ABBREV . '_logo', '');
         ?>
@@ -35,7 +35,7 @@ final class Settings
      * 
      * @return void
      */
-    public static function renderEmailToField(): void
+    public function renderEmailToField(): void
     {
         $value = get_option(Config::PLUGIN_ABBREV . '_email_to', '');
         echo '<input type="email" name="'.Config::PLUGIN_ABBREV.'_email_to" value="' . esc_attr($value) . '" style="width:50%;">';
@@ -46,7 +46,7 @@ final class Settings
      * 
      * @return void
      */
-    public static function renderEmailFromField(): void
+    public function renderEmailFromField(): void
     {
         $value = get_option(Config::PLUGIN_ABBREV . '_email_from', '');
         echo '<input type="email" name="'.Config::PLUGIN_ABBREV.'_email_from" value="' . esc_attr($value) . '" style="width:50%;">';
@@ -57,7 +57,7 @@ final class Settings
      * 
      * @return void
      */
-    public static function renderEmailSubjectField(): void
+    public function renderEmailSubjectField(): void
     {
         $value = get_option(Config::PLUGIN_ABBREV . '_email_subject', '');
         echo '<input type="text" name="'.Config::PLUGIN_ABBREV.'_email_subject" value="' . esc_attr($value) . '" style="width:50%;">';
@@ -68,7 +68,7 @@ final class Settings
      * 
      * @return void
      */
-    public static function renderContactFields(): void
+    public function renderContactFields(): void
     {
         $fields = get_option(Config::PLUGIN_ABBREV . '_contact_fields', []);
         if (!is_array($fields)) {

@@ -48,7 +48,7 @@ class Initializer
             $section['title'],
             $section['slug'],
             $order,
-            $questionIds,
+            array_map(fn($id) => $this->setIdNamespace($id), $questionIds),
             $isQuestion
         );
     }
@@ -181,7 +181,15 @@ class Initializer
         usort($questionSections, function($a, $b) {
             return $a->order <=> $b->order;
         });
-
+        $questionSections = array_map(function($section) {
+            $fields = [];
+            foreach ($section->fields as $sectionField) {
+                $correspondingField = array_filter($this->fields, fn($field) => $field->id === $sectionField);
+                array_push($fields, $correspondingField);
+            }
+            $section->setFieldsData($fields);
+            return $section;
+        }, $questionSections);
         return $questionSections;
     }
 }

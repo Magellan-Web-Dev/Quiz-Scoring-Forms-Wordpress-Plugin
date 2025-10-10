@@ -33,17 +33,16 @@ final class Render
     {
         ?>
             <main class="<?=Config::PLUGIN_ABBREV?>-main-container">
-                
+                <?= $this->renderFormContent(); ?>
             </main>
             <script>
                 // Question Value Schema
                 const questionValueSchema = [
-                    <?php foreach ($this->data->results as $score) : ?>
-                        { text: "<?php echo esc_js($score['text']); ?>", value: "<?php echo esc_js($score['value']); ?>" },
+                    <?php foreach ($this->data->answers as $answer) : ?>
+                        { text: "<?= esc_js($answer['text']); ?>", value: "<?= esc_js($answer['value']); ?>" },
                     <?php endforeach; ?>
                 ];
             </script>
-
             <script type="importmap">
                 {
                     "imports": {
@@ -91,20 +90,20 @@ final class Render
                 ?>
                     <div 
                         class="contact-item" 
-                        id="contact-<?php echo $field_id; ?>" 
-                        data-contact_item="<?php echo $field_id; ?>" 
-                        :class="errors['<?php echo $field_id; ?>'] ? 'field-error' : ''"
+                        id="contact-<?= $field_id; ?>" 
+                        data-contact_item="<?= $field_id; ?>" 
+                        :class="errors['<?= $field_id; ?>'] ? 'field-error' : ''"
                     >
-                        <label for="<?php echo $field_id; ?>"><?php echo $field_label; ?>:</label>
+                        <label for="<?= $field_id; ?>"><?= $field_label; ?>:</label>
                         <input 
-                            type="<?php echo $field_type; ?>" 
-                            id="<?php echo $field_id; ?>" 
-                            name="<?php echo $field_id; ?>" 
-                            x-model="form['<?php echo $field_id; ?>']"
-                            x-on:input="clearError('<?php echo $field_id; ?>')"
+                            type="<?= $field_type; ?>" 
+                            id="<?= $field_id; ?>" 
+                            name="<?= $field_id; ?>" 
+                            x-model="form['<?= $field_id; ?>']"
+                            x-on:input="clearError('<?= $field_id; ?>')"
                         >
-                        <span x-show="errors['<?php echo $field_id; ?>']" class="field-error-text">
-                            <span x-text="errors['<?php echo $field_id; ?>']"></span>
+                        <span x-show="errors['<?= $field_id; ?>']" class="field-error-text">
+                            <span x-text="errors['<?= $field_id; ?>']"></span>
                         </span>
                     </div>
                 <?php endforeach; ?>
@@ -124,29 +123,29 @@ final class Render
         ?>
             <!-- Questions Sections -->
             <section class="questions-sections" id="questions-sections" data-section="questions" :class="{ 'active': currentSection === 'questions' }">
-                <h3 class="section-title"><?php echo esc_html($this->data->instructions); ?></h3>
+                <h3 class="section-title"><?= esc_html($this->data->instructions); ?></h3>
                 <?php 
-                $sectionStartIndex = 0; 
-                foreach ($this->data->schema->getAllQuestionsSections() as $section) :
-                    $section_id    = esc_attr($section->id);
-                    $section_title = esc_html($section->title);
-                    $sectionQuestionsCount = count($section->fields);
-                ?>
-                    <div 
-                        class="questions-section" 
-                        id="questions-section-<?php echo $section_id; ?>" 
-                        data-section_item="<?php echo $section_id; ?>"
-                        :class="{ 'active': 
-                            globalQuestionIndex >= <?php echo $sectionStartIndex; ?> && 
-                            globalQuestionIndex < <?php echo $sectionStartIndex + $sectionQuestionsCount; ?> 
-                        }"
-                    >
-                        <h4 class="question-section-title"><?php echo $section_title; ?></h4>
-                        <?php foreach ($section['questions'] as $index => $question):?>
-                            <?= $this->renderQuestionField($question); ?>
-                            <?php $this->globalIndex++; ?>
-                        <?php endforeach; ?>
-                    </div>
+                    $sectionStartIndex = 0;
+                    foreach ($this->data->schema->getAllQuestionsSections() as $section) :
+                        $section_id    = esc_attr($section->id);
+                        $section_title = esc_html($section->title);
+                        $sectionQuestionsCount = count($section->fields);
+                    ?>
+                        <div 
+                            class="questions-section" 
+                            id="questions-section-<?= $section_id; ?>" 
+                            data-section_item="<?= $section_id; ?>"
+                            :class="{ 'active': 
+                                globalQuestionIndex >= <?= $sectionStartIndex; ?> && 
+                                globalQuestionIndex < <?= $sectionStartIndex + $sectionQuestionsCount; ?> 
+                            }"
+                        >
+                            <h4 class="question-section-title"><?= $section_title; ?></h4>
+                            <?php foreach ($section->fieldsData as $question):?>
+                                <?= $this->renderQuestionField($question); ?>
+                                <?php $this->globalIndex++; ?>
+                            <?php endforeach; ?>
+                        </div>
                     <?php $sectionStartIndex += $sectionQuestionsCount; ?>
                 <?php endforeach; ?>
             </section>
@@ -155,17 +154,18 @@ final class Render
     }
 
     private function renderQuestionField($question) {
-        $question_id   = esc_attr($question['id']);
-        $question_text = esc_html($question['text']);
+        var_dump($question);
+        $question_id   = esc_attr($question->id);
+        $question_text = esc_html($question->label);
         ?>
             <div 
                 class="question-item" 
-                id="question-<?php echo $question_id; ?>" 
-                data-question_item="<?php echo $question_id; ?>"
-                :class="{ 'active': globalQuestionIndex === <?php echo $this->globalIndex; ?> }"
+                id="question-<?= $question_id; ?>" 
+                data-question_item="<?= $question_id; ?>"
+                :class="{ 'active': globalQuestionIndex === <?= $this->globalIndex; ?> }"
             >
-                <p class="question-heading"><?php echo $question_text; ?></p>
-                <div class="question-choices" data-question_choices="<?php echo $question_id; ?>">
+                <p class="question-heading"><?= $question_text; ?></p>
+                <div class="question-choices" data-question_choices="<?= $question_id; ?>">
                     <?php foreach ($data['scoring'] as $text => $value) : 
                         $choice_label = esc_html($text);
                         $choice_value = esc_attr($value);
@@ -173,24 +173,24 @@ final class Render
                     ?>
                         <div 
                             class="question-choice" 
-                            data-question_choice="<?php echo $question_id . '-' . $choice_value; ?>"
-                            x-on:click="chooseAnswer('<?php echo $question_id; ?>', '<?php echo $choice_value; ?>')" 
+                            data-question_choice="<?= $question_id . '-' . $choice_value; ?>"
+                            x-on:click="chooseAnswer('<?= $question_id; ?>', '<?= $choice_value; ?>')" 
                         >
                             <input 
                                 type="radio" 
-                                name="<?php echo $question_id; ?>" 
-                                id="<?php echo $choice_id; ?>" 
-                                value="<?php echo $choice_value; ?>" 
-                                x-ref="radio-<?php echo $choice_id; ?>"
-                                x-model="form['question-<?php echo $question_id; ?>']"
+                                name="<?= $question_id; ?>" 
+                                id="<?= $choice_id; ?>" 
+                                value="<?= $choice_value; ?>" 
+                                x-ref="radio-<?= $choice_id; ?>"
+                                x-model="form['question-<?= $question_id; ?>']"
                             >
-                            <label for="<?php echo $choice_id; ?>"><?php echo $choice_label; ?></label>
+                            <label for="<?= $choice_id; ?>"><?= $choice_label; ?></label>
                         </div>
                     <?php endforeach; ?>
                 </div>
                 <span 
-                    x-show="errors['question-<?php echo $question_id; ?>']" 
-                    x-text="errors['question-<?php echo $question_id; ?>']" 
+                    x-show="errors['question-<?= $question_id; ?>']" 
+                    x-text="errors['question-<?= $question_id; ?>']" 
                     class="field-error-text">
                 </span>
             </div>
@@ -207,8 +207,8 @@ final class Render
                         $section_id    = esc_attr($section['id']);
                         $section_title = esc_html($section['title']);
                     ?>
-                        <div class="answered-questions-section" id="answered-questions-section-<?php echo $section_id; ?>" data-section_answers_item="<?php echo $section_id; ?>">
-                            <h3><?php echo $section_title; ?></h3>
+                        <div class="answered-questions-section" id="answered-questions-section-<?= $section_id; ?>" data-section_answers_item="<?= $section_id; ?>">
+                            <h3><?= $section_title; ?></h3>
                             <ol>
                                 <?php foreach ($section['questions'] as $qIndex => $question) : 
                                     $question_id   = esc_attr($question['id']);
@@ -216,17 +216,17 @@ final class Render
                                 ?>
                                     <li>
                                         <h4>Question</h4>
-                                        <p><?php echo $question_text; ?></p>
+                                        <p><?= $question_text; ?></p>
                                         <h4>Answer</h4> 
                                         <p 
-                                            data_answered_question="<?php echo $question_id; ?>"
-                                            x-text="form['question-<?php echo $question_id; ?>'] 
-                                                ? getLabel(form['question-<?php echo $question_id; ?>'], questionValueSchema) 
+                                            data_answered_question="<?= $question_id; ?>"
+                                            x-text="form['question-<?= $question_id; ?>'] 
+                                                ? getLabel(form['question-<?= $question_id; ?>'], questionValueSchema) 
                                                 : 'Not answered yet'"
                                         ></p>
                                         <button
                                             type="button"
-                                            x-on:click="editAnswer('<?php echo $question_id; ?>', <?php echo (int) $qIndex; ?>)"
+                                            x-on:click="editAnswer('<?= $question_id; ?>', <?= (int) $qIndex; ?>)"
                                         >
                                             Edit
                                         </button>

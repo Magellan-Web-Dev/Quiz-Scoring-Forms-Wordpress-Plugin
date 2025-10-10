@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace QuizScoringForms\Core\Dashboard;
+namespace QuizScoringForms\Core\Admin;
 
 use QuizScoringForms\Config;
 use QuizScoringForms\Core\Post\RegisterHandler as PostRegisterHandler;
-use QuizScoringForms\UI\Dashboard\Settings as SettingsUI;
-use QuizScoringForms\UI\Dashboard\MainInterface as DashboardUI;
+use QuizScoringForms\UI\Admin\Settings as SettingsUI;
+use QuizScoringForms\UI\Admin\MainInterface as AdminUI;
 
 /** Prevent direct access */
 if (!defined('ABSPATH')) exit;
@@ -15,11 +15,11 @@ if (!defined('ABSPATH')) exit;
 /**
  * Class Initializer
  *
- * Master handler for the WordPress dashboard.
+ * Master handler for the WordPress admin.
  *
  * Responsibilities:
  * - Register the sidebar menu and submenu pages.
- * - Delegate rendering to Dashboard UI.
+ * - Delegate rendering to Admin UI.
  * - Instantiate PostRegisterHandler to manage quizzes.
  */
 final class Initializer
@@ -29,6 +29,18 @@ final class Initializer
      * 
      */
     public readonly PostRegisterHandler $postHandler;
+
+    /**
+     * @var SettingsUI
+     * 
+     */
+    public readonly SettingsUI $settingsUI;
+
+    /**
+     * @var AdminUI
+     * 
+     */
+    public readonly AdminUI $adminUI;
 
     /**
      * Initializer constructor.
@@ -41,8 +53,14 @@ final class Initializer
         // Initialize post handler (CPT registration, metaboxes, API)
         $this->postHandler = new PostRegisterHandler();
 
+        // Initialize the settings UI
+        $this->settingsUI = new SettingsUI();
+
+        // Initialize the dashboard UI
+        $this->adminUI = new AdminUI();
+
         // Register menu and settings
-        add_action('admin_menu', [$this, 'registerDashboardMenu']);
+        add_action('admin_menu', [$this, 'registerAdminMenu']);
         add_action('admin_init', [$this, 'registerSettings']);
     }
 
@@ -52,29 +70,29 @@ final class Initializer
      * @see https://developer.wordpress.org/reference/functions/add_menu_page/
      * @see https://developer.wordpress.org/reference/functions/add_submenu_page/
      */
-    public function registerDashboardMenu(): void
+    public function registerAdminMenu(): void
     {
         add_menu_page(
             Config::PLUGIN_NAME,
             Config::PLUGIN_NAME,
             'manage_options',
-            Config::SLUG . '_dashboard',
-            [DashboardUI::class, 'renderHome'],
+            Config::SLUG . '_admin',
+            [$this->adminUI, 'renderHome'],
             'dashicons-welcome-learn-more',
             25
         );
 
         add_submenu_page(
-            Config::SLUG . '_dashboard',
+            Config::SLUG . '_admin',
             'Settings',
             'Settings',
             'manage_options',
             'settings',
-            [DashboardUI::class, 'renderSettings']
+            [$this->adminUI, 'renderSettings']
         );
 
         add_submenu_page(
-            Config::SLUG . '_dashboard',
+            Config::SLUG . '_admin',
             'Quizzes',
             'Quizzes',
             'edit_posts',
@@ -110,10 +128,10 @@ final class Initializer
             Config::SLUG_UNDERSCORE
         );
 
-        add_settings_field(Config::PLUGIN_ABBREV . '_logo', 'Logo', [SettingsUI::class, 'renderLogoField'], Config::SLUG_UNDERSCORE, Config::PLUGIN_ABBREV . '_submission_email');
-        add_settings_field(Config::PLUGIN_ABBREV . '_email_to', 'Email To', [SettingsUI::class, 'renderEmailToField'], Config::SLUG_UNDERSCORE, Config::PLUGIN_ABBREV . '_submission_email');
-        add_settings_field(Config::PLUGIN_ABBREV . '_email_from', 'Email From', [SettingsUI::class, 'renderEmailFromField'], Config::SLUG_UNDERSCORE, Config::PLUGIN_ABBREV . '_submission_email');
-        add_settings_field(Config::PLUGIN_ABBREV . '_email_subject', 'Email Subject', [SettingsUI::class, 'renderEmailSubjectField'], Config::SLUG_UNDERSCORE, Config::PLUGIN_ABBREV . '_submission_email');
+        add_settings_field(Config::PLUGIN_ABBREV . '_logo', 'Logo', [$this->settingsUI, 'renderLogoField'], Config::SLUG_UNDERSCORE, Config::PLUGIN_ABBREV . '_submission_email');
+        add_settings_field(Config::PLUGIN_ABBREV . '_email_to', 'Email To', [$this->settingsUI, 'renderEmailToField'], Config::SLUG_UNDERSCORE, Config::PLUGIN_ABBREV . '_submission_email');
+        add_settings_field(Config::PLUGIN_ABBREV . '_email_from', 'Email From', [$this->settingsUI, 'renderEmailFromField'], Config::SLUG_UNDERSCORE, Config::PLUGIN_ABBREV . '_submission_email');
+        add_settings_field(Config::PLUGIN_ABBREV . '_email_subject', 'Email Subject', [$this->settingsUI, 'renderEmailSubjectField'], Config::SLUG_UNDERSCORE, Config::PLUGIN_ABBREV . '_submission_email');
 
         // -------------------------------
         // Section: Contact Fields
@@ -136,7 +154,7 @@ final class Initializer
         add_settings_field(
             Config::PLUGIN_ABBREV . '_'.Config::CONTACT_FIELDS_SLUG.'',
             'Fields',
-            [SettingsUI::class, 'renderContactFields'],
+            [$this->settingsUI, 'renderContactFields'],
             Config::SLUG_UNDERSCORE,
             Config::PLUGIN_ABBREV . '_'.Config::CONTACT_FIELDS_SLUG.'_section'
         );

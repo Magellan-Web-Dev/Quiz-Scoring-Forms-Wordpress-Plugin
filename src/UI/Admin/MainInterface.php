@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace QuizScoringForms\UI\Dashboard;
+namespace QuizScoringForms\UI\Admin;
 
 use QuizScoringForms\Config;
 
@@ -12,14 +12,14 @@ if (!defined('ABSPATH')) exit;
 /**
  * Class DashboardUI
  *
- * Handles all HTML rendering for the plugin dashboard.
+ * Handles all HTML rendering for the plugin admin dashboard.
  */
 final class MainInterface
 {
     /**
      * Render dashboard home page
      */
-    public static function renderHome(): void
+    public function renderHome(): void
     {
         $settings_url = admin_url('admin.php?page=settings');
         $quizzes_url  = admin_url('edit.php?post_type=' . Config::POST_TYPE);
@@ -36,7 +36,7 @@ final class MainInterface
     /**
      * Render plugin settings page
      */
-    public static function renderSettings(): void
+    public function renderSettings(): void
     {
         ?>
         <div class="wrap">
@@ -57,7 +57,7 @@ final class MainInterface
     /**
      * Render logo field
      */
-    public static function renderLogoField(): void
+    public function renderLogoField(): void
     {
         $logo = get_option(Config::PLUGIN_ABBREV . 'logo', '');
         echo '<input type="text" name="qsf_logo" value="' . esc_attr($logo) . '" style="width:50%;"> ';
@@ -67,7 +67,7 @@ final class MainInterface
     /**
      * Render email to field
      */
-    public static function renderEmailToField(): void
+    public function renderEmailToField(): void
     {
         $value = get_option(Config::PLUGIN_ABBREV . 'email_to', '');
         echo '<input type="email" name="qsf_email_to" value="' . esc_attr($value) . '" style="width:50%;">';
@@ -76,7 +76,7 @@ final class MainInterface
     /**
      * Render email from field
      */
-    public static function renderEmailFromField(): void
+    public function renderEmailFromField(): void
     {
         $value = get_option(Config::PLUGIN_ABBREV . 'email_from', '');
         echo '<input type="email" name="qsf_email_from" value="' . esc_attr($value) . '" style="width:50%;">';
@@ -85,7 +85,7 @@ final class MainInterface
     /**
      * Render email subject field
      */
-    public static function renderEmailSubjectField(): void
+    public function renderEmailSubjectField(): void
     {
         $value = get_option(Config::PLUGIN_ABBREV . 'email_subject', '');
         echo '<input type="text" name="qsf_email_subject" value="' . esc_attr($value) . '" style="width:50%;">';

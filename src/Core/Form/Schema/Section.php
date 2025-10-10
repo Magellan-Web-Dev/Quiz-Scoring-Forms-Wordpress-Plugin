@@ -18,6 +18,15 @@ if (!defined('ABSPATH')) exit;
  */
 final class Section
 {
+    /**
+     * Stores the field data for the section.
+     * 
+     * @var array An associative array containing the field data.
+     * 
+     * @see setFieldsData()
+     */
+    public readonly array $fieldsData;
+
     public function __construct(
         public readonly string $id,
         public readonly string $title,
@@ -26,4 +35,8 @@ final class Section
         public readonly array $fields,
         public readonly bool $questionSection
     ) {}
+
+    public function setFieldsData(array $fields) {
+        $this->fieldsData = $fields;
+    }
 }

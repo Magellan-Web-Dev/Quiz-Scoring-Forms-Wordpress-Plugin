@@ -72,7 +72,6 @@ final class Initializer
             return Render::renderErrMsg('No quiz post data could be found.');
         }
         $this->formData = new FormDataHandler((array) $this->data);
-        var_dump($this->formData->answers);
         $this->render = new Render($this->formData);
         $this->render->renderContent();
     }

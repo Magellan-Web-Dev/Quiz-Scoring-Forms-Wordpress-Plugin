@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace QuizScoringForms\UI\Dashboard;
+namespace QuizScoringForms\UI\Admin;
 
 /** 
  * Prevent direct access from sources other than the WordPress environment

@@ -29,5 +29,5 @@ final class Config
     public const POST_NAME_SINGULAR = 'Quiz'; // The singular name of the post type
     public const NAMESPACE_PREFIX = 'QuizScoringForms\\'; // The namespace prefix
     public const CONTACT_FIELDS_SLUG = 'contact_fields'; // The slug for contact fields
-    public const ASSETS_PATH = QUIZ_SCORING_FORMS_DEV_MODE . '/assets'; // The name of the assets folder
+    public const ASSETS_PATH = QUIZ_SCORING_FORMS_FOLDER_PATH . '/assets'; // The name of the assets folder
 }

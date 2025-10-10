@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace QuizScoringForms;
 
-use QuizScoringForms\Core\Dashboard\Initializer as Dashboard;
+use QuizScoringForms\Core\Admin\Initializer as Admin;
 use QuizScoringForms\Core\Shortcode\Initializer as Shortcode;
 use QuizScoringForms\Services\ErrorGenerator;
 
@@ -36,9 +36,9 @@ final class Plugin
     private static ?Plugin $instance = null;
 
     /**
-     * @var Dashboard $dashboard
+     * @var Admin $admin
      */
-    private Dashboard $dashboard;
+    private Admin $admin;
 
     /**
      * @var Shortcode $shortcode
@@ -93,18 +93,18 @@ final class Plugin
      */
     private function loadPlugin(): void 
     {
-        $this->dashboard = new Dashboard();
+        $this->admin = new Admin();
         $this->shortcode = new Shortcode();
     }
 
     /**
-     * Get the dashboard component
+     * Get the admin dashboard component
      * 
-     * @return Dashboard
+     * @return Admin
      */
-    public function getDashboard(): Dashboard 
+    public function getDashboard(): Admin 
     {
-        return $this->dashboard;
+        return $this->admin;
     }
 
     /**
