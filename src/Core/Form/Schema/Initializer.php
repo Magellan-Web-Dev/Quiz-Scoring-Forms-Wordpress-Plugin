@@ -184,8 +184,10 @@ class Initializer
         $questionSections = array_map(function($section) {
             $fields = [];
             foreach ($section->fields as $sectionField) {
-                $correspondingField = array_filter($this->fields, fn($field) => $field->id === $sectionField);
-                array_push($fields, $correspondingField);
+                $correspondingField = array_values(
+                    array_filter($this->fields, fn($field) => $field->id === $sectionField)
+                );
+                $fields[] = $correspondingField[0] ?? null;
             }
             $section->setFieldsData($fields);
             return $section;

@@ -34,12 +34,13 @@ final class Render
         ?>
             <main class="<?=Config::PLUGIN_ABBREV?>-main-container">
                 <?= $this->renderFormContent(); ?>
+                <?= $this->renderAnsweredQuestionsSection(); ?>
             </main>
             <script>
                 // Question Value Schema
                 const questionValueSchema = [
                     <?php foreach ($this->data->answers as $answer) : ?>
-                        { text: "<?= esc_js($answer['text']); ?>", value: "<?= esc_js($answer['value']); ?>" },
+                        { text: "<?= esc_js($answer->text); ?>", value: "<?= esc_js($answer->value); ?>" },
                     <?php endforeach; ?>
                 ];
             </script>
@@ -54,7 +55,7 @@ final class Render
         <?php
     }
 
-    private function renderFormContent() {
+    private function renderFormContent(): void {
         ?>
             <form 
                 method="POST" 
@@ -119,7 +120,7 @@ final class Render
      * @return void
      */
 
-    private function renderQuestionSections() {
+    private function renderQuestionSections(): void {
         ?>
             <!-- Questions Sections -->
             <section class="questions-sections" id="questions-sections" data-section="questions" :class="{ 'active': currentSection === 'questions' }">
@@ -153,8 +154,7 @@ final class Render
         <?php
     }
 
-    private function renderQuestionField($question) {
-        var_dump($question);
+    private function renderQuestionField($question): void {
         $question_id   = esc_attr($question->id);
         $question_text = esc_html($question->label);
         ?>
@@ -166,9 +166,9 @@ final class Render
             >
                 <p class="question-heading"><?= $question_text; ?></p>
                 <div class="question-choices" data-question_choices="<?= $question_id; ?>">
-                    <?php foreach ($data['scoring'] as $text => $value) : 
-                        $choice_label = esc_html($text);
-                        $choice_value = esc_attr($value);
+                    <?php foreach ($this->data->answers as $answer) : 
+                        $choice_label = esc_html($answer->text);
+                        $choice_value = esc_attr($answer->value);
                         $choice_id    = 'question-' . $question_id . '-' . $choice_value;
                     ?>
                         <div 
@@ -197,7 +197,7 @@ final class Render
         <?php
     }
 
-    private function renderAnsweredQuestionsSection($data) {
+    private function renderAnsweredQuestionsSection():void {
         ?>
             <!-- Answered Questions Section -->
             <section class="answered-questions-sections" id="answered-questions-sections" data-section="answers" :class="{ 'active': currentSection === 'answers' }">

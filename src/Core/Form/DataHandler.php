@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace QuizScoringForms\Core\Form;
 
 use QuizScoringForms\Core\Form\Schema\Initializer as Schema;
+use QuizScoringForms\Core\Form\Answer as Answer;
 
 /** 
  * Prevent direct access from sources other than the Wordpress environment
@@ -87,12 +88,35 @@ final class DataHandler {
         $this->instructions = $postData['instructions'];
         $this->contactSection = $postData['contactSection'];
         $this->questionSections = $postData['questionSections'];
-        $this->answers = $postData['answers'];
+        $this->answers = $this->setAnswers($postData['answers']);
         $this->results = $postData['results'];
         $this->schema = new Schema();
 
         $this->setContactsData();
         $this->setQuestionsData();
+    }
+
+    /**
+     * Set the answers data. Maps an array of answer objects to an array of Answer objects.
+     * 
+     * @param array $answers The array of answer objects.
+     * 
+     * @return array An array of Answer objects.
+     */
+    private function setAnswers(array $answers): array {
+        return array_map(
+            /**
+             * Maps an answer object to an Answer object.
+             * 
+             * @param array $answer The answer object containing the ID, text, and value.
+             * 
+             * @return Answer The Answer object.
+             */
+            function (array $answer): Answer {
+                return new Answer($answer['id'], $answer['text'], $answer['value']);
+            },
+            $answers
+        );
     }
 
     /**

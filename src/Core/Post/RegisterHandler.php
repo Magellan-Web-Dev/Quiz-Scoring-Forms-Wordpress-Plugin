@@ -6,7 +6,7 @@ namespace QuizScoringForms\Core\Post;
 
 use QuizScoringForms\Config;
 use QuizScoringForms\Core\Post\Validation;
-use QuizScoringForms\UI\Dashboard\PostMetaBox as MetaBoxUI;
+use QuizScoringForms\UI\Admin\PostMetaBox as MetaBoxUI;
 use QuizScoringForms\API\Post\Router as APIRouter;
 
 /** 
@@ -29,7 +29,7 @@ final class RegisterHandler
      * The key for storing the quiz data in the transient storage.
      * @var string
      */
-    public const DATA_STORAGE_KEY = 'quiz_post';
+    public const string DATA_STORAGE_KEY = 'quiz_post';
 
     /**
      * The meta key for storing the quiz data in the post meta table.
