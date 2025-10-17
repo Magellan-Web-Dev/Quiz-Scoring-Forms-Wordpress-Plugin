@@ -29,5 +29,7 @@ final class Config
     public const string POST_NAME_SINGULAR = 'Quiz'; // The singular name of the post type
     public const string NAMESPACE_PREFIX = 'QuizScoringForms\\'; // The namespace prefix
     public const string CONTACT_FIELDS_SLUG = 'contact_fields'; // The slug for contact fields
-    public const string ASSETS_PATH = QUIZ_SCORING_FORMS_FOLDER_PATH . '/assets'; // The name of the assets folder
+    public const string ASSETS_PATH = QUIZ_SCORING_FORMS_FOLDER_PATH . ''; // The path to the plugin's assets
+    public const string ASSETS_URL = QUIZ_SCORING_FORMS_FOLDER_URL . '/'; // The URL to the plugin's assets
+    public const string LOCAL_STORAGE_NAME = self::SLUG_UNDERSCORE . '_question_storage'; // The name of the local storage
 }

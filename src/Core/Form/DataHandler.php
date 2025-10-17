@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace QuizScoringForms\Core\Form;
 
 use QuizScoringForms\Core\Form\Schema\Initializer as Schema;
-use QuizScoringForms\Core\Form\Answer as Answer;
+use QuizScoringForms\Core\Form\Data\Answer as Answer;
 
 /** 
  * Prevent direct access from sources other than the Wordpress environment

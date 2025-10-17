@@ -43,15 +43,17 @@ final class Render
                         { text: "<?= esc_js($answer->text); ?>", value: "<?= esc_js($answer->value); ?>" },
                     <?php endforeach; ?>
                 ];
+                const LOCAL_STORAGE_NAME = "<?= Config::LOCAL_STORAGE_NAME; ?>";
+                const IS_DEV = <?= QUIZ_SCORING_FORMS_DEV_MODE; ?> === 1 ? true : false;
             </script>
             <script type="importmap">
                 {
                     "imports": {
-                        "alpinejs": "<?= Config::ASSETS_PATH; ?>/node_modules/alpinejs/dist/module.esm.js"
+                        "alpinejs": "<?= Config::ASSETS_URL; ?>/node_modules/alpinejs/dist/module.esm.js"
                     }
                 }
             </script>
-            <script src="<?= Config::ASSETS_PATH; ?>/js/main.js" type="module"></script>
+            <script src="<?= Config::ASSETS_URL; ?>/assets/js/main.js" type="module"></script>
         <?php
     }
 
@@ -203,16 +205,16 @@ final class Render
             <section class="answered-questions-sections" id="answered-questions-sections" data-section="answers" :class="{ 'active': currentSection === 'answers' }">
                 <div class="answered-questions-section">
                     <h3>Check Your Answers. Click Edit To Change The Answer</h3>
-                    <?php foreach ($data['sections'] as $section) : 
-                        $section_id    = esc_attr($section['id']);
-                        $section_title = esc_html($section['title']);
+                    <?php foreach ($this->data->schema->getAllQuestionsSections() as $section) : 
+                        $section_id    = esc_attr($section->id);
+                        $section_title = esc_html($section->title);
                     ?>
                         <div class="answered-questions-section" id="answered-questions-section-<?= $section_id; ?>" data-section_answers_item="<?= $section_id; ?>">
                             <h3><?= $section_title; ?></h3>
                             <ol>
-                                <?php foreach ($section['questions'] as $qIndex => $question) : 
-                                    $question_id   = esc_attr($question['id']);
-                                    $question_text = esc_html($question['text']);
+                                <?php foreach ($section->fieldsData as $qIndex => $question) : 
+                                    $question_id   = esc_attr($question->id);
+                                    $question_text = esc_html($question->label);
                                 ?>
                                     <li>
                                         <h4>Question</h4>

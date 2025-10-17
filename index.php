@@ -44,8 +44,17 @@ if (function_exists('plugin_dir_path') && !QUIZ_SCORING_FORMS_DEV_MODE) {
             str_replace("\\", "/", plugin_dir_path(__FILE__))
         )
     );
+    // Get full plugin URL
+    $plugin_url = plugin_dir_url(__FILE__);
+
+    // Derive relative path: remove site_url() portion
+    $plugin_relative_url = str_replace(site_url(), '', $plugin_url);
+
+    // Define constants
+    define('QUIZ_SCORING_FORMS_FOLDER_URL', $plugin_relative_url);
 } else {
     define("QUIZ_SCORING_FORMS_FOLDER_PATH", __DIR__);
+    define('QUIZ_SCORING_FORMS_FOLDER_URL', '/wp-content/plugins/quiz-scoring-forms/');
 }
 
 /**

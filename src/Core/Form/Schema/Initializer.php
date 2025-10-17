@@ -181,6 +181,7 @@ class Initializer
         usort($questionSections, function($a, $b) {
             return $a->order <=> $b->order;
         });
+
         $questionSections = array_map(function($section) {
             $fields = [];
             foreach ($section->fields as $sectionField) {
@@ -189,7 +190,9 @@ class Initializer
                 );
                 $fields[] = $correspondingField[0] ?? null;
             }
-            $section->setFieldsData($fields);
+            if (!isset($section->fieldsData)) {
+                $section->setFieldsData($fields);
+            }
             return $section;
         }, $questionSections);
         return $questionSections;

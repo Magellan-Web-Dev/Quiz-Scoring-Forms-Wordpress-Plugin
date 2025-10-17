@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace QuizScoringForms\Core\Form;
+namespace QuizScoringForms\Core\Form\Data;
 
 /** 
  * Prevent direct access from sources other than the Wordpress environment
