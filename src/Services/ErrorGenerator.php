@@ -88,7 +88,7 @@ final class ErrorGenerator
 
             echo '
                 <style>
-                    .wp-custom-api-notice-error {
+                    .quiz-scoring-forms-notice-error {
                         font-size: min(0.875rem, 4.25vw) !important;
                         padding: 1em !important;
                         text-wrap: balance;
@@ -99,9 +99,9 @@ final class ErrorGenerator
         // Output notice errors
 
         foreach (self::$errors_list as $error) {
-            echo '<div class="notice notice-error wp-custom-api-notice-error"><strong>' . esc_html($error->get_error_code()) . ':</strong> ' . esc_html($error->get_error_message()) . '</div>';
+            echo '<div class="notice notice-error quiz-scoring-forms-notice-error"><strong>' . esc_html($error->get_error_code()) . ':</strong> ' . esc_html($error->get_error_message()) . '</div>';
         }
 
-        do_action('wp_custom_api_error_displayed', self::$errors_list);
+        do_action('quiz_scoring_forms_error_displayed', self::$errors_list);
     }
 }

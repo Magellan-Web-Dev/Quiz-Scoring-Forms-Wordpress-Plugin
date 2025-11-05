@@ -28,9 +28,9 @@ final class Field
     /**
      * The value associated with the form field in the question.
      *
-     * @var int|float|string|null
+     * @var mixed
      */
-    private int|float|string|null $value = null;
+    private mixed $value = null;
 
     /**
      * The score associated with the form field in the question.
@@ -252,13 +252,13 @@ final class Field
     /**
      * Set the value of the form field. Only allows being set once.
      * 
-     * @param int|float|string $value The value to assign.
-     * @return int|float|string|null The stored value.
+     * @param mixed $value The value to assign.
+     * @return mixed The stored value.
      */
-    public function setValue(int|float|string $value): int|float|string|null
+    public function setValue(mixed $value): mixed
     {
         if ($this->value !== null) {
-            throw new \LogicException("Value for form field {$this->id} has already been set and cannot be changed.");
+            return $this->value;
         }
         $this->value = $this->castValue($value);
         return $this->value;
