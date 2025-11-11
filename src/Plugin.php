@@ -93,8 +93,13 @@ final class Plugin
      */
     private function loadPlugin(): void 
     {
-        $this->admin = new Admin();
+        // Shortcode
         $this->shortcode = new Shortcode();
+
+        // Lazy-load admin features only if in WP dashboard
+        if (is_admin() && !wp_doing_ajax()) {
+            $this->admin = new Admin();
+        }
     }
 
     /**
